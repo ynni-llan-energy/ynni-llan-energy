@@ -1,7 +1,12 @@
 import { createClient } from "next-sanity";
 
 const sharedConfig = {
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  // Fall back to an empty string so the module loads without throwing when
+  // NEXT_PUBLIC_SANITY_PROJECT_ID is not yet set (e.g. during a cold build
+  // before environment variables are configured on the hosting platform).
+  // Any query made without a real project ID will return an empty result via
+  // the catch blocks in generateStaticParams / page data collectors.
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "unconfigured",
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production",
   apiVersion: "2025-04-07",
 };

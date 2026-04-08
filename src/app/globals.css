@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Tonnau Colour Palette */
+  --color-sea-navy: #0a4b68;
+  --color-solar-gold: #e09800;
+  --color-deep-gold: #c07e00;
+  --color-mountain-green: #2b8050;
+  --color-warm-cream: #eee8d8;
+  --color-dark-surface: #0a4b68;
+
+  /* Semantic aliases */
+  --color-background: var(--color-warm-cream);
+  --color-foreground: var(--color-sea-navy);
+
+  /* Typography */
+  --font-display: var(--font-lora), "Georgia", "Times New Roman", serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: theme(--color-warm-cream);
+  color: theme(--color-sea-navy);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background-color: theme(--color-warm-cream);
+  color: theme(--color-sea-navy);
+}
+
+/* Welsh-first bilingual heading pattern */
+.cy {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.en {
+  font-style: italic;
+  font-size: 0.9em;
+  color: theme(--color-sea-navy);
+  opacity: 0.75;
 }

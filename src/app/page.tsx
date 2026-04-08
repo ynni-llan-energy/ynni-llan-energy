@@ -1,65 +1,144 @@
-import Image from "next/image";
+import { draftMode } from "next/headers";
+import { Hero } from "@/components/home/hero";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
+import { DraftModeBanner } from "@/components/ui/draft-mode-banner";
+import { WaveDivider } from "@/components/icons/wave-divider";
+import { getSiteSettings, getProjects, getNewsPosts } from "@/sanity/queries";
+import { sanityDraftClient } from "@/sanity/client";
+import Link from "next/link";
 
-export default function Home() {
+export default async function HomePage() {
+  const { isEnabled: isDraftMode } = await draftMode();
+  const client = isDraftMode ? sanityDraftClient : undefined;
+
+  const [settings, projects, newsPosts] = await Promise.all([
+    getSiteSettings(client),
+    getProjects(client),
+    getNewsPosts(client),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      {isDraftMode && <DraftModeBanner />}
+      <Header />
+
+      <main id="main-content">
+        <Hero
+          heading_cy={settings?.heroHeading_cy}
+          heading_en={settings?.heroHeading_en}
+          body_cy={settings?.heroBody_cy ?? undefined}
+          body_en={settings?.heroBody_en ?? undefined}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <WaveDivider lines={3} />
+
+        {/* Stats bar */}
+        <section className="bg-[#0A4B68] text-[#EEE8D8] py-12" aria-label="Ystadegau / Statistics">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+              <div className="flex flex-col gap-1">
+                <span className="font-display text-4xl font-bold text-[#E09800]">
+                  {projects.length || "—"}
+                </span>
+                <span lang="cy" className="text-sm font-medium">Prosiectau</span>
+                <span lang="en" className="text-xs italic text-[#EEE8D8]/50">Projects</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="font-display text-4xl font-bold text-[#E09800]">—</span>
+                <span lang="cy" className="text-sm font-medium">Aelodau</span>
+                <span lang="en" className="text-xs italic text-[#EEE8D8]/50">Members</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="font-display text-4xl font-bold text-[#E09800]">—</span>
+                <span lang="cy" className="text-sm font-medium">kWh a gynhyrchwyd</span>
+                <span lang="en" className="text-xs italic text-[#EEE8D8]/50">kWh generated</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <WaveDivider lines={3} flip />
+
+        {/* Latest news */}
+        {newsPosts.length > 0 && (
+          <section className="py-20 px-4 sm:px-6 lg:px-8" aria-labelledby="news-heading">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-baseline justify-between mb-10">
+                <div>
+                  <h2 id="news-heading" lang="cy" className="font-display text-3xl font-bold text-[#0A4B68]">
+                    Newyddion Diweddar
+                  </h2>
+                  <p lang="en" className="italic text-[#0A4B68]/60 text-sm mt-1 pl-3 border-l border-[#C07E00]/40">
+                    Latest News
+                  </p>
+                </div>
+                <Link href="/newyddion" className="text-sm text-[#C07E00] hover:text-[#0A4B68] transition-colors underline underline-offset-2">
+                  <span lang="cy">Gweld y cyfan</span>
+                  <span lang="en" className="italic opacity-60"> / See all</span>
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {newsPosts.slice(0, 3).map((post) => (
+                  <Link
+                    key={post._id}
+                    href={`/newyddion/${post.slug.current}`}
+                    className="group flex flex-col gap-3 p-6 bg-white/50 border border-[#0A4B68]/10 rounded-sm hover:border-[#0A4B68]/30 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0A4B68]"
+                  >
+                    <time dateTime={post.publishedAt} className="text-xs text-[#C07E00] font-medium tracking-wide">
+                      {new Date(post.publishedAt).toLocaleDateString("cy-GB", { day: "numeric", month: "long", year: "numeric" })}
+                    </time>
+                    <h3 lang="cy" className="font-display font-semibold text-[#0A4B68] group-hover:text-[#C07E00] transition-colors leading-snug">
+                      {post.title_cy}
+                    </h3>
+                    {post.title_en && <p lang="en" className="text-sm italic text-[#0A4B68]/50">{post.title_en}</p>}
+                    {post.excerpt_cy && <p lang="cy" className="text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{post.excerpt_cy}</p>}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Projects preview */}
+        {projects.length > 0 && (
+          <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0A4B68]/5" aria-labelledby="projects-heading">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-baseline justify-between mb-10">
+                <div>
+                  <h2 id="projects-heading" lang="cy" className="font-display text-3xl font-bold text-[#0A4B68]">
+                    Ein Prosiectau
+                  </h2>
+                  <p lang="en" className="italic text-[#0A4B68]/60 text-sm mt-1 pl-3 border-l border-[#C07E00]/40">
+                    Our Projects
+                  </p>
+                </div>
+                <Link href="/prosiectau" className="text-sm text-[#C07E00] hover:text-[#0A4B68] transition-colors underline underline-offset-2">
+                  <span lang="cy">Gweld y cyfan</span>
+                  <span lang="en" className="italic opacity-60"> / See all</span>
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {projects.slice(0, 3).map((project) => (
+                  <Link
+                    key={project._id}
+                    href={`/prosiectau/${project.slug.current}`}
+                    className="group flex flex-col gap-3 p-6 bg-[#EEE8D8] border border-[#0A4B68]/10 rounded-sm hover:border-[#0A4B68]/30 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0A4B68]"
+                  >
+                    <span className="text-xs font-medium text-[#2B8050] uppercase tracking-wide">{project.status.replace("_", " ")}</span>
+                    <h3 lang="cy" className="font-display font-semibold text-[#0A4B68] group-hover:text-[#C07E00] transition-colors leading-snug">{project.title_cy}</h3>
+                    {project.title_en && <p lang="en" className="text-sm italic text-[#0A4B68]/50">{project.title_en}</p>}
+                    {project.summary_cy && <p lang="cy" className="text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{project.summary_cy}</p>}
+                    {project.capacityKw && <p className="text-xs text-[#C07E00] font-medium mt-auto pt-2">{project.capacityKw} kW</p>}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
-    </div>
+
+      <Footer />
+    </>
   );
 }

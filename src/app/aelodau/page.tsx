@@ -6,6 +6,11 @@ import { ProfileForm } from "@/components/auth/profile-form";
 import { signOut } from "@/app/actions/auth";
 import type { Metadata } from "next";
 
+// Auth-protected — always render on demand, never statically pre-render.
+// Without this, next build tries to pre-render the page and fails when
+// Supabase env vars aren't available in the build environment.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Fy Nghyfrif | Ynni Cymunedol Llanfairfechan",
 };

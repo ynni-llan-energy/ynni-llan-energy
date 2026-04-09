@@ -10,6 +10,11 @@ const navLinks = [
   { href: "/cysylltu", cy: "Cysylltu", en: "Contact" },
 ];
 
+const memberLinks: { href: string; cy: string; en: string; isPrimary?: boolean }[] = [
+  { href: "/mewngofnodi", cy: "Mewngofnodi", en: "Log in" },
+  { href: "/ymuno", cy: "Ymuno", en: "Join", isPrimary: true },
+];
+
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -44,13 +49,27 @@ export function Header() {
               </Link>
             ))}
 
-            <Link
-              href="/aelodaeth"
-              className="ml-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-[#0A4B68] text-[#EEE8D8] text-sm font-medium hover:bg-[#083a52] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0A4B68]"
-            >
-              <span lang="cy">Ymuno</span>
-              <span className="opacity-60 text-xs italic" lang="en">/ Join</span>
-            </Link>
+            {memberLinks.map(({ href, cy, en, isPrimary }) =>
+              isPrimary ? (
+                <Link
+                  key={href}
+                  href={href}
+                  className="ml-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-[#0A4B68] text-[#EEE8D8] text-sm font-medium hover:bg-[#083a52] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0A4B68]"
+                >
+                  <span lang="cy">{cy}</span>
+                  <span className="opacity-60 text-xs italic" lang="en">/ {en}</span>
+                </Link>
+              ) : (
+                <Link
+                  key={href}
+                  href={href}
+                  className="group flex flex-col leading-none text-[#0A4B68] hover:text-[#C07E00] transition-colors"
+                >
+                  <span className="font-display text-sm font-semibold">{cy}</span>
+                  <span className="text-xs italic opacity-60 group-hover:opacity-80">{en}</span>
+                </Link>
+              )
+            )}
           </nav>
 
           {/* Mobile menu button */}
@@ -99,16 +118,22 @@ export function Header() {
                 </Link>
               </li>
             ))}
-            <li className="pt-2">
-              <Link
-                href="/aelodaeth"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-baseline gap-2 py-2 text-[#C07E00] font-display font-semibold hover:text-[#0A4B68] transition-colors"
-              >
-                <span lang="cy">Ymuno</span>
-                <span className="text-sm italic opacity-70" lang="en">/ Join</span>
-              </Link>
-            </li>
+            {memberLinks.map(({ href, cy, en, isPrimary }) => (
+              <li key={href} className={isPrimary ? "pt-2" : ""}>
+                <Link
+                  href={href}
+                  onClick={() => setMenuOpen(false)}
+                  className={
+                    isPrimary
+                      ? "flex items-baseline gap-2 py-2 text-[#C07E00] font-display font-semibold hover:text-[#0A4B68] transition-colors"
+                      : "flex items-baseline gap-2 py-2 text-[#0A4B68] hover:text-[#C07E00] transition-colors"
+                  }
+                >
+                  <span lang="cy">{cy}</span>
+                  <span className="text-sm italic opacity-70" lang="en">/ {en}</span>
+                </Link>
+              </li>
+            ))}
           </ul>
         </nav>
       )}

@@ -17,8 +17,28 @@ export interface Database {
           approved_at: string | null;
           approved_by: string | null;
         };
-        Insert: Omit<Database["public"]["Tables"]["members"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["members"]["Insert"]>;
+        Insert: {
+          id?: string;
+          email: string;
+          full_name?: string | null;
+          status?: MemberStatus;
+          eligible_to_vote?: boolean;
+          postcode?: string | null;
+          joined_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+        };
+        Update: {
+          email?: string;
+          full_name?: string | null;
+          status?: MemberStatus;
+          eligible_to_vote?: boolean;
+          postcode?: string | null;
+          joined_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+        };
+        Relationships: [];
       };
       ballots: {
         Row: {
@@ -34,8 +54,29 @@ export interface Database {
           quorum: number | null;
           created_by: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["ballots"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["ballots"]["Insert"]>;
+        Insert: {
+          id?: string;
+          title_cy: string;
+          title_en: string;
+          description_cy?: string | null;
+          description_en?: string | null;
+          status?: BallotStatus;
+          opens_at: string;
+          closes_at: string;
+          quorum?: number | null;
+          created_by: string;
+        };
+        Update: {
+          title_cy?: string;
+          title_en?: string;
+          description_cy?: string | null;
+          description_en?: string | null;
+          status?: BallotStatus;
+          opens_at?: string;
+          closes_at?: string;
+          quorum?: number | null;
+        };
+        Relationships: [];
       };
       ballot_options: {
         Row: {
@@ -46,8 +87,19 @@ export interface Database {
           label_en: string;
           sort_order: number;
         };
-        Insert: Omit<Database["public"]["Tables"]["ballot_options"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["ballot_options"]["Insert"]>;
+        Insert: {
+          id?: string;
+          ballot_id: string;
+          label_cy: string;
+          label_en: string;
+          sort_order?: number;
+        };
+        Update: {
+          label_cy?: string;
+          label_en?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
       };
       votes: {
         Row: {
@@ -58,8 +110,15 @@ export interface Database {
           option_id: string;
           voted_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["votes"]["Row"], "id" | "created_at">;
+        Insert: {
+          id?: string;
+          ballot_id: string;
+          member_id: string;
+          option_id: string;
+          voted_at?: string;
+        };
         Update: never;
+        Relationships: [];
       };
       email_sends: {
         Row: {
@@ -71,9 +130,19 @@ export interface Database {
           triggered_by: string;
           sent_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["email_sends"]["Row"], "id" | "created_at">;
+        Insert: {
+          id?: string;
+          template: string;
+          subject: string;
+          recipient_count?: number;
+          triggered_by: string;
+          sent_at?: string;
+        };
         Update: never;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }

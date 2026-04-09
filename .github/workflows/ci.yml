@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Unit tests — fast, no server needed
+  # ---------------------------------------------------------------------------
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:ci
+
+  # ---------------------------------------------------------------------------
+  # Build + smoke tests — catch runtime 500s before Vercel deploys
+  # ---------------------------------------------------------------------------
+  smoke-tests:
+    name: Build & smoke tests
+    runs-on: ubuntu-latest
+    env:
+      # Public vars are embedded at build time — required for next build to succeed.
+      # Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as repository
+      # secrets in GitHub (Settings → Secrets → Actions). Without them the app
+      # still builds and smoke-tests public pages (auth is gracefully skipped).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: production
+      # Preview secret can be any stable string in CI
+      NEXT_PUBLIC_SANITY_PREVIEW_SECRET: ci-smoke-test-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server and run smoke tests
+        run: |
+          # Start next start in the background
+          npm start &
+          SERVER_PID=$!
+
+          # Wait up to 30 s for the server to be ready
+          echo "Waiting for server on port 3000..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Server ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          # Run smoke tests
+          BASE_URL=http://localhost:3000 npm run test:smoke:ci
+
+          # Cleanly stop the background server
+          kill $SERVER_PID 2>/dev/null || true

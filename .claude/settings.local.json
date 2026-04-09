@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(node -e \"const icons = require\\('@sanity/icons'\\); console.log\\(Object.keys\\(icons\\).filter\\(k => k.toLowerCase\\(\\).includes\\('leaf'\\) || k.toLowerCase\\(\\).includes\\('plant'\\) || k.toLowerCase\\(\\).includes\\('nature'\\)\\)\\)\")",
+      "Bash(node -e \"const icons = require\\('@sanity/icons'\\); console.log\\(Object.keys\\(icons\\).filter\\(k => k.toLowerCase\\(\\).includes\\('bolt'\\) || k.toLowerCase\\(\\).includes\\('lightning'\\) || k.toLowerCase\\(\\).includes\\('sun'\\) || k.toLowerCase\\(\\).includes\\('star'\\)\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('hex'\\)\\)\")",
+      "Bash(gh repo:*)",
+      "Bash(git --version)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(rm /Users/tedmackereth/ynni-llan-energy/.git/index.lock)",
+      "Bash(git push:*)",
+      "Bash(npm test:*)",
+      "Bash(grep -n \"Relation\\\\$1\\\\|HasRelation\\\\|GenericSchema\\\\|GenericTable\" /Users/tedmackereth/ynni-llan-energy/node_modules/@supabase/postgrest-js/dist/index.d.mts)",
+      "Bash(git checkout:*)"
     ]
   }
 }

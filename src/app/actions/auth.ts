@@ -11,11 +11,14 @@ import {
 
 /**
  * Resolves the site URL for magic link redirects.
- * Priority: explicit env var > Vercel deployment URL > localhost fallback.
- * VERCEL_URL is set automatically by Vercel on every deployment (preview + prod).
+ * Priority: SITE_URL (production override) > VERCEL_URL (auto-set by Vercel) > localhost.
+ *
+ * SITE_URL (no NEXT_PUBLIC_ prefix) is a runtime-only server var — set it in
+ * Vercel for the Production environment only. Preview deployments skip it and
+ * fall through to VERCEL_URL, which Vercel sets automatically per-deployment.
  */
 function getSiteUrl(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.SITE_URL) return process.env.SITE_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "http://localhost:3000";
 }

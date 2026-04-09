@@ -9,45 +9,27 @@ test.describe("Login page", () => {
     await expect(
       page.getByRole("heading", { name: /Mewngofnodi/i })
     ).toBeVisible();
-    // Google button present
-    await expect(page.getByRole("button", { name: /Google/i })).toBeVisible();
-    // Email and password fields present
+    // Email field present (no password field)
     await expect(page.locator("#email")).toBeVisible();
-    await expect(page.locator("#password")).toBeVisible();
+    await expect(page.locator("#password")).toHaveCount(0);
   });
 
-  test("valid credentials redirect to member dashboard", async ({
-    page,
-    testUser,
-  }) => {
+  test("submitting a valid email shows sent confirmation", async ({ page }) => {
     await page.goto("/mewngofnodi");
 
-    await page.fill("#email", testUser.email);
-    await page.fill("#password", testUser.password);
-    await page.click('form:has(#email) [type="submit"]');
+    await page.fill("#email", "someone@example.com");
+    await page.click('[type="submit"]');
 
-    await page.waitForURL("**/aelodau", { timeout: 15_000 });
-    await expect(page).toHaveURL(/aelodau/);
+    // Should show the "check your email" success state
+    await expect(page.getByRole("status")).toBeVisible();
+    await expect(page.getByText(/Gwiriwch eich e-bost/i)).toBeVisible();
   });
 
-  test("wrong password shows error", async ({ page, testUser }) => {
+  test("submitting an invalid email shows validation error", async ({ page }) => {
     await page.goto("/mewngofnodi");
 
-    await page.fill("#email", testUser.email);
-    await page.fill("#password", "WrongPassword!");
-    await page.click('form:has(#email) [type="submit"]');
-
-    // Should stay on /mewngofnodi and show an error
-    await expect(page).toHaveURL(/mewngofnodi/);
-    await expect(page.getByRole("alert").first()).toBeVisible();
-  });
-
-  test("unknown email shows error", async ({ page }) => {
-    await page.goto("/mewngofnodi");
-
-    await page.fill("#email", "nobody@nowhere.example");
-    await page.fill("#password", "Password123!");
-    await page.click('form:has(#email) [type="submit"]');
+    await page.fill("#email", "not-an-email");
+    await page.click('[type="submit"]');
 
     await expect(page).toHaveURL(/mewngofnodi/);
     await expect(page.getByRole("alert").first()).toBeVisible();

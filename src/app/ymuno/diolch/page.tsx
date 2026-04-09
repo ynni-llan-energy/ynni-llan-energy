@@ -22,10 +22,14 @@ export default function ThankYouPage() {
           </p>
           <div className="bg-white/60 border border-[#0A4B68]/10 rounded-sm p-6 text-sm text-[#0A4B68]/80 space-y-3">
             <p lang="cy">
-              Anfonwyd e-bost atoch i gadarnhau eich cyfeiriad. Cliciwch y ddolen yn yr e-bost i actifadu eich cyfrif.
+              Anfonwyd dolen mewngofnodi atoch. Cliciwch y ddolen yn yr e-bost i fynd i&apos;ch cyfrif.
             </p>
             <p className="italic text-[#0A4B68]/50 text-xs" lang="en">
-              We&apos;ve sent you a confirmation email. Click the link in the email to activate your account.
+              We&apos;ve sent you a sign-in link. Click it to access your account.
+            </p>
+            <p className="text-xs text-[#0A4B68]/40 pt-1">
+              <span lang="cy">Mae&apos;r ddolen yn ddilys am awr.</span>{" "}
+              <span className="italic" lang="en">The link is valid for one hour.</span>
             </p>
           </div>
           <p className="mt-8 text-sm text-[#0A4B68]/60">

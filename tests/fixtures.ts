@@ -1,13 +1,19 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { randomBytes } from "crypto";
-import { createTestUser, deleteTestUser, type TestUserRecord } from "./helpers/auth";
+import {
+  createTestUser,
+  deleteTestUser,
+  generateMagicLink,
+  type TestUserRecord,
+} from "./helpers/auth";
 
 type Fixtures = {
   /** A confirmed Supabase user that is cleaned up after the test. */
   testUser: TestUserRecord;
   /**
    * A Page that is already logged in as `testUser`.
-   * The session is established via the UI login flow.
+   * The session is established by navigating directly to an admin-generated
+   * magic link, bypassing the email delivery step.
    */
   authenticatedPage: Page;
 };
@@ -16,10 +22,9 @@ export const test = base.extend<Fixtures>({
   testUser: async ({}, use) => {
     const suffix = randomBytes(4).toString("hex");
     const email = `e2e-${suffix}@example.com`;
-    const password = "TestPass123!";
     const fullName = `E2E User ${suffix}`;
 
-    const user = await createTestUser(email, password, fullName);
+    const user = await createTestUser(email, fullName);
 
     await use(user);
 
@@ -28,15 +33,11 @@ export const test = base.extend<Fixtures>({
   },
 
   authenticatedPage: async ({ page, testUser }, use) => {
-    await page.goto("/mewngofnodi");
+    const magicLink = await generateMagicLink(testUser.email);
 
-    await page.fill("#email", testUser.email);
-    await page.fill("#password", testUser.password);
-
-    // Click the email/password submit button (not the Google button)
-    await page.click('form:has(#email) [type="submit"]');
-
-    // Wait for redirect to the member dashboard
+    // Navigate directly to the magic link — this exchanges the token and
+    // redirects to /aelodau, establishing a real browser session.
+    await page.goto(magicLink);
     await page.waitForURL("**/aelodau", { timeout: 15_000 });
 
     await use(page);

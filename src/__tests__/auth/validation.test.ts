@@ -1,10 +1,9 @@
-import { SignUpSchema, SignInSchema, UpdateProfileSchema } from "@/lib/auth/schemas";
+import { SignUpSchema, MagicLinkSchema, UpdateProfileSchema } from "@/lib/auth/schemas";
 
 describe("SignUpSchema", () => {
   const valid = {
     full_name: "Siân Jones",
     email: "sian@example.com",
-    password: "Secret123!",
   };
 
   it("accepts valid signup data", () => {
@@ -28,14 +27,6 @@ describe("SignUpSchema", () => {
     }
   });
 
-  it("rejects a password shorter than 8 characters", () => {
-    const result = SignUpSchema.safeParse({ ...valid, password: "short" });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.password).toBeDefined();
-    }
-  });
-
   it("trims whitespace from full_name and email", () => {
     const result = SignUpSchema.safeParse({
       ...valid,
@@ -50,27 +41,22 @@ describe("SignUpSchema", () => {
   });
 });
 
-describe("SignInSchema", () => {
-  const valid = { email: "sian@example.com", password: "anypassword" };
-
-  it("accepts valid sign-in data", () => {
-    expect(SignInSchema.safeParse(valid).success).toBe(true);
-  });
-
-  it("rejects an empty password", () => {
-    const result = SignInSchema.safeParse({ ...valid, password: "" });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.password).toBeDefined();
-    }
+describe("MagicLinkSchema", () => {
+  it("accepts a valid email", () => {
+    expect(MagicLinkSchema.safeParse({ email: "sian@example.com" }).success).toBe(true);
   });
 
   it("rejects an invalid email", () => {
-    const result = SignInSchema.safeParse({ ...valid, email: "bad" });
+    const result = MagicLinkSchema.safeParse({ email: "bad" });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.email).toBeDefined();
     }
+  });
+
+  it("rejects an empty email", () => {
+    const result = MagicLinkSchema.safeParse({ email: "" });
+    expect(result.success).toBe(false);
   });
 });
 

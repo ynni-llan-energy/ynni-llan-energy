@@ -1,4 +1,5 @@
 import { test, expect } from "../fixtures";
+import { generateMagicLink } from "../helpers/auth";
 
 test.describe("Protected route behaviour", () => {
   test("unauthenticated request to /aelodau redirects to /mewngofnodi", async ({
@@ -31,14 +32,12 @@ test.describe("Protected route behaviour", () => {
     ).toBeVisible();
   });
 
-  test("after login, user lands on /aelodau", async ({ page, testUser }) => {
-    // Navigate to login page directly
-    await page.goto("/mewngofnodi");
-
-    await page.fill("#email", testUser.email);
-    await page.fill("#password", testUser.password);
-    await page.click('form:has(#email) [type="submit"]');
-
+  test("after clicking magic link, user lands on /aelodau", async ({
+    page,
+    testUser,
+  }) => {
+    const magicLink = await generateMagicLink(testUser.email);
+    await page.goto(magicLink);
     await page.waitForURL("**/aelodau", { timeout: 15_000 });
     await expect(page).toHaveURL(/aelodau/);
   });

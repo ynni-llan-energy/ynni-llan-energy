@@ -1,11 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
   SignUpSchema,
-  SignInSchema,
+  MagicLinkSchema,
   UpdateProfileSchema,
   type AuthFormState,
 } from "@/lib/auth/schemas";
@@ -17,20 +16,19 @@ export async function signUp(
   const parsed = SignUpSchema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),
-    password: formData.get("password"),
   });
 
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const { full_name, email, password } = parsed.data;
+  const { full_name, email } = parsed.data;
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
-    password,
     options: {
+      shouldCreateUser: true,
       data: { full_name },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
     },
@@ -43,53 +41,33 @@ export async function signUp(
   redirect("/ymuno/diolch");
 }
 
-export async function signIn(
+export async function requestMagicLink(
   state: AuthFormState,
   formData: FormData
 ): Promise<AuthFormState> {
-  const parsed = SignInSchema.safeParse({
+  const parsed = MagicLinkSchema.safeParse({
     email: formData.get("email"),
-    password: formData.get("password"),
   });
 
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const { email, password } = parsed.data;
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    return {
-      message:
-        "Cyfeiriad e-bost neu gyfrinair anghywir / Incorrect email or password",
-    };
-  }
-
-  redirect("/aelodau");
-}
-
-export async function signInWithGoogle() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    `https://${headersList.get("host")}`;
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      shouldCreateUser: false,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
     },
   });
 
-  if (error || !data.url) {
-    redirect("/mewngofnodi?error=oauth_failed");
+  if (error) {
+    return { message: error.message };
   }
 
-  redirect(data.url);
+  return { message: "sent" };
 }
 
 export async function signOut() {

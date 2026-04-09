@@ -9,7 +9,7 @@ import { createClient } from "@supabase/supabase-js";
  * CI     — the workflow exports SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
  *          after `supabase start`.
  */
-function createAdminClient() {
+export function createAdminClient() {
   const url = process.env.SUPABASE_URL ?? "http://localhost:54321";
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -29,24 +29,21 @@ function createAdminClient() {
 export interface TestUserRecord {
   id: string;
   email: string;
-  password: string;
   fullName: string;
 }
 
 /**
  * Create a confirmed auth user via the admin API.
- * `email_confirm: true` skips the email confirmation step even when
- * `enable_confirmations` is on, so the test can log in immediately.
+ * `email_confirm: true` skips the email confirmation step so the test can
+ * log in immediately via generateMagicLink.
  */
 export async function createTestUser(
   email: string,
-  password: string,
   fullName: string
 ): Promise<TestUserRecord> {
   const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.createUser({
     email,
-    password,
     email_confirm: true,
     user_metadata: { full_name: fullName },
   });
@@ -55,7 +52,25 @@ export async function createTestUser(
     throw new Error(`Failed to create test user: ${error?.message}`);
   }
 
-  return { id: data.user.id, email, password, fullName };
+  return { id: data.user.id, email, fullName };
+}
+
+/**
+ * Generate a magic link URL for a user via the admin API.
+ * Use this in tests to establish an authenticated session without email.
+ */
+export async function generateMagicLink(email: string): Promise<string> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+
+  if (error || !data.properties?.action_link) {
+    throw new Error(`Failed to generate magic link: ${error?.message}`);
+  }
+
+  return data.properties.action_link;
 }
 
 /**
@@ -69,4 +84,15 @@ export async function deleteTestUser(userId: string): Promise<void> {
     // Log but don't throw — we still want other teardown steps to run.
     console.warn(`Could not delete test user ${userId}: ${error.message}`);
   }
+}
+
+/**
+ * Find and delete a test user by email address.
+ * Used for cleanup in tests that create users through the signup UI.
+ */
+export async function deleteTestUserByEmail(email: string): Promise<void> {
+  const admin = createAdminClient();
+  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const user = data?.users.find((u) => u.email === email);
+  if (user?.id) await deleteTestUser(user.id);
 }

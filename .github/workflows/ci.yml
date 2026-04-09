@@ -111,20 +111,32 @@ jobs:
       - name: Extract Supabase credentials
         run: |
           # `supabase status` exits with code 1 when optional services (imgproxy,
-          # pooler) are stopped. Capture the output and ignore the exit code so
-          # the step doesn't fail — the essential services are still running.
+          # pooler) are stopped. Capture output and suppress exit code — the
+          # essential services are still running.
           STATUS=$(supabase status 2>&1 || true)
           echo "$STATUS"
 
-          SUPABASE_URL=$(echo "$STATUS" | grep -oP 'API URL:\s+\K\S+')
-          ANON_KEY=$(echo "$STATUS" | grep -oP 'anon key:\s+\K\S+')
-          SERVICE_ROLE_KEY=$(echo "$STATUS" | grep -oP 'service_role key:\s+\K\S+')
+          # The Supabase CLI output format changed in v2: box-drawing table with
+          # "Project URL", "Publishable", "Secret" labels instead of the old
+          # "API URL:", "anon key:", "service_role key:" plain-text lines.
+          # Support both formats with || alternation so neither grep exits non-zero.
+          SUPABASE_URL=$(echo "$STATUS" | grep -oP 'Project URL\s+│\s+\K[^\s│]+' || \
+                         echo "$STATUS" | grep -oP 'API URL:\s+\K\S+' || true)
 
-          # Fail explicitly if we couldn't extract the credentials
+          ANON_KEY=$(echo "$STATUS" | grep -oP 'Publishable\s+│\s+\K[^\s│]+' || \
+                     echo "$STATUS" | grep -oP 'anon key:\s+\K\S+' || true)
+
+          SERVICE_ROLE_KEY=$(echo "$STATUS" | grep -oP 'Secret\s+│\s+\K[^\s│]+' || \
+                             echo "$STATUS" | grep -oP 'service_role key:\s+\K\S+' || true)
+
+          # Fail explicitly if we still couldn't extract anything
           if [ -z "$SUPABASE_URL" ] || [ -z "$ANON_KEY" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
-            echo "ERROR: Could not extract Supabase credentials from status output"
+            echo "ERROR: Could not extract Supabase credentials from status output above"
             exit 1
           fi
+
+          echo "Extracted URL: $SUPABASE_URL"
+          echo "Extracted anon key prefix: ${ANON_KEY:0:20}..."
 
           echo "SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV

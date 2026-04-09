@@ -10,12 +10,16 @@ import { createClient } from "@supabase/supabase-js";
  *          after `supabase start`.
  */
 function createAdminClient() {
-  const url =
-    process.env.SUPABASE_URL ?? "http://localhost:54321";
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    // Default local dev service-role key produced by supabase CLI
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0";
+  const url = process.env.SUPABASE_URL ?? "http://localhost:54321";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!key) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not set.\n" +
+        "Run `supabase start` then export the Secret key:\n" +
+        "  export SUPABASE_SERVICE_ROLE_KEY=$(supabase status 2>&1 | grep -oP 'Secret\\s+│\\s+\\K[^\\s│]+')"
+    );
+  }
 
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },

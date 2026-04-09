@@ -110,12 +110,21 @@ jobs:
 
       - name: Extract Supabase credentials
         run: |
-          # Parse `supabase status` output to get URLs and keys
-          STATUS=$(supabase status)
+          # `supabase status` exits with code 1 when optional services (imgproxy,
+          # pooler) are stopped. Capture the output and ignore the exit code so
+          # the step doesn't fail — the essential services are still running.
+          STATUS=$(supabase status 2>&1 || true)
+          echo "$STATUS"
 
           SUPABASE_URL=$(echo "$STATUS" | grep -oP 'API URL:\s+\K\S+')
           ANON_KEY=$(echo "$STATUS" | grep -oP 'anon key:\s+\K\S+')
           SERVICE_ROLE_KEY=$(echo "$STATUS" | grep -oP 'service_role key:\s+\K\S+')
+
+          # Fail explicitly if we couldn't extract the credentials
+          if [ -z "$SUPABASE_URL" ] || [ -z "$ANON_KEY" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
+            echo "ERROR: Could not extract Supabase credentials from status output"
+            exit 1
+          fi
 
           echo "SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV

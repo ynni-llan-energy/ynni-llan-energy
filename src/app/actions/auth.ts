@@ -9,6 +9,17 @@ import {
   type AuthFormState,
 } from "@/lib/auth/schemas";
 
+/**
+ * Resolves the site URL for magic link redirects.
+ * Priority: explicit env var > Vercel deployment URL > localhost fallback.
+ * VERCEL_URL is set automatically by Vercel on every deployment (preview + prod).
+ */
+function getSiteUrl(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
 export async function signUp(
   state: AuthFormState,
   formData: FormData
@@ -30,7 +41,7 @@ export async function signUp(
     options: {
       shouldCreateUser: true,
       data: { full_name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
     },
   });
 
@@ -59,7 +70,7 @@ export async function requestMagicLink(
     email: parsed.data.email,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
     },
   });
 

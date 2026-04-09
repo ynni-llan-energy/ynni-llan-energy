@@ -61,9 +61,13 @@ export async function createTestUser(
  */
 export async function generateMagicLink(email: string): Promise<string> {
   const admin = createAdminClient();
+  const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
   const { data, error } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
+    options: {
+      redirectTo: `${baseUrl}/auth/callback`,
+    },
   });
 
   if (error || !data.properties?.action_link) {

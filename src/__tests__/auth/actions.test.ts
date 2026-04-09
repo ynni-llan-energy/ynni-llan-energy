@@ -9,9 +9,7 @@
 // Mocks — must be declared before any imports that use the mocked modules
 // ---------------------------------------------------------------------------
 
-const mockSignUp = jest.fn();
-const mockSignInWithPassword = jest.fn();
-const mockSignInWithOAuth = jest.fn();
+const mockSignInWithOtp = jest.fn();
 const mockSignOut = jest.fn();
 const mockGetUser = jest.fn();
 const mockFrom = jest.fn();
@@ -19,9 +17,7 @@ const mockFrom = jest.fn();
 jest.mock("@/lib/supabase/server", () => ({
   createClient: jest.fn().mockResolvedValue({
     auth: {
-      signUp: mockSignUp,
-      signInWithPassword: mockSignInWithPassword,
-      signInWithOAuth: mockSignInWithOAuth,
+      signInWithOtp: mockSignInWithOtp,
       signOut: mockSignOut,
       getUser: mockGetUser,
     },
@@ -70,7 +66,7 @@ function expectRedirectTo(url: string) {
 // ---------------------------------------------------------------------------
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { signUp, signIn, signOut: doSignOut, updateProfile } = require("@/app/actions/auth");
+const { signUp, requestMagicLink, signOut: doSignOut, updateProfile } = require("@/app/actions/auth");
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -86,28 +82,26 @@ describe("signUp", () => {
   const validData = {
     full_name: "Siân Jones",
     email: "sian@example.com",
-    password: "Secret123!",
   };
 
   it("returns field errors for invalid input", async () => {
-    const fd = makeFormData({ full_name: "S", email: "bad", password: "x" });
+    const fd = makeFormData({ full_name: "S", email: "bad" });
     const result = await signUp(undefined, fd);
     expect(result?.errors).toBeDefined();
     expect(result?.errors?.full_name).toBeDefined();
     expect(result?.errors?.email).toBeDefined();
-    expect(result?.errors?.password).toBeDefined();
-    expect(mockSignUp).not.toHaveBeenCalled();
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
   });
 
-  it("calls supabase.auth.signUp with correct args and redirects on success", async () => {
-    mockSignUp.mockResolvedValue({ data: { user: { id: "abc" } }, error: null });
+  it("calls supabase.auth.signInWithOtp with correct args and redirects on success", async () => {
+    mockSignInWithOtp.mockResolvedValue({ error: null });
     const fd = makeFormData(validData);
     await expect(signUp(undefined, fd)).rejects.toThrow("NEXT_REDIRECT");
-    expect(mockSignUp).toHaveBeenCalledWith(
+    expect(mockSignInWithOtp).toHaveBeenCalledWith(
       expect.objectContaining({
         email: "sian@example.com",
-        password: "Secret123!",
         options: expect.objectContaining({
+          shouldCreateUser: true,
           data: { full_name: "Siân Jones" },
         }),
       })
@@ -116,49 +110,45 @@ describe("signUp", () => {
   });
 
   it("returns a message when supabase returns an error", async () => {
-    mockSignUp.mockResolvedValue({
-      data: {},
-      error: { message: "Email already registered" },
+    mockSignInWithOtp.mockResolvedValue({
+      error: { message: "Email rate limit exceeded" },
     });
     const fd = makeFormData(validData);
     const result = await signUp(undefined, fd);
-    expect(result?.message).toBe("Email already registered");
+    expect(result?.message).toBe("Email rate limit exceeded");
   });
 });
 
-// ---- signIn ---------------------------------------------------------------
+// ---- requestMagicLink -----------------------------------------------------
 
-describe("signIn", () => {
-  const validData = { email: "sian@example.com", password: "Secret123!" };
-
-  it("returns field errors for invalid input", async () => {
-    const fd = makeFormData({ email: "bad", password: "" });
-    const result = await signIn(undefined, fd);
-    expect(result?.errors).toBeDefined();
+describe("requestMagicLink", () => {
+  it("returns field errors for invalid email", async () => {
+    const fd = makeFormData({ email: "bad" });
+    const result = await requestMagicLink(undefined, fd);
+    expect(result?.errors?.email).toBeDefined();
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
   });
 
-  it("calls signInWithPassword and redirects on success", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: { user: { id: "abc" } },
-      error: null,
-    });
-    const fd = makeFormData(validData);
-    await expect(signIn(undefined, fd)).rejects.toThrow("NEXT_REDIRECT");
-    expect(mockSignInWithPassword).toHaveBeenCalledWith({
-      email: "sian@example.com",
-      password: "Secret123!",
-    });
-    expectRedirectTo("/aelodau");
+  it("calls signInWithOtp with shouldCreateUser:false and returns sent", async () => {
+    mockSignInWithOtp.mockResolvedValue({ error: null });
+    const fd = makeFormData({ email: "sian@example.com" });
+    const result = await requestMagicLink(undefined, fd);
+    expect(mockSignInWithOtp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "sian@example.com",
+        options: expect.objectContaining({ shouldCreateUser: false }),
+      })
+    );
+    expect(result?.message).toBe("sent");
   });
 
-  it("returns an error message on auth failure", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: {},
-      error: { message: "Invalid login credentials" },
+  it("returns a message when supabase returns an error", async () => {
+    mockSignInWithOtp.mockResolvedValue({
+      error: { message: "Invalid redirect URL" },
     });
-    const fd = makeFormData(validData);
-    const result = await signIn(undefined, fd);
-    expect(result?.message).toMatch(/anghywir|Incorrect/);
+    const fd = makeFormData({ email: "sian@example.com" });
+    const result = await requestMagicLink(undefined, fd);
+    expect(result?.message).toBe("Invalid redirect URL");
   });
 });
 

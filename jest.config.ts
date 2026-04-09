@@ -7,21 +7,19 @@ const config: Config = {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
   testMatch: ["**/__tests__/**/*.test.ts", "**/__tests__/**/*.test.tsx"],
+  // Smoke tests require a live server — run separately via jest.smoke.config.ts
+  testPathIgnorePatterns: ["/node_modules/", "/.next/", "/__tests__/smoke/"],
   transform: {
     "^.+\\.tsx?$": [
       "ts-jest",
       {
         tsconfig: {
-          // Allow importing from the project tsconfig but override module to
-          // CommonJS so Jest can run the files without a bundler.
           module: "commonjs",
           jsx: "react",
         },
       },
     ],
   },
-  // Never run tests inside node_modules or .next
-  testPathIgnorePatterns: ["/node_modules/", "/.next/"],
 };
 
 export default config;

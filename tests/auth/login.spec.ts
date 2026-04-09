@@ -7,7 +7,7 @@ test.describe("Login page", () => {
     await expect(page).toHaveTitle(/Mewngofnodi/);
     // Welsh heading visible
     await expect(
-      page.getByRole("heading", { name: /Mewngofnodwch/i })
+      page.getByRole("heading", { name: /Mewngofnodi/i })
     ).toBeVisible();
     // Google button present
     await expect(page.getByRole("button", { name: /Google/i })).toBeVisible();

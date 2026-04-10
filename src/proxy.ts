@@ -33,17 +33,9 @@ export async function proxy(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request });
 
-  // If Supabase isn't configured (e.g. preview deploys without env vars set),
-  // pass through without auth so the app still renders rather than 500-ing.
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.next({ request });
-  }
-
   const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -67,8 +59,6 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
 
   // Protect member-area routes
   if (PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {

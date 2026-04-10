@@ -13,8 +13,12 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  const posts = await getNewsPosts();
-  return posts.map((post) => ({ slug: post.slug.current }));
+  try {
+    const posts = await getNewsPosts();
+    return posts.map((post) => ({ slug: post.slug.current }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

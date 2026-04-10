@@ -5,7 +5,7 @@ import { visionTool } from "@sanity/vision";
 import { schema } from "@/sanity/schema";
 import { structure } from "@/sanity/structure";
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!;
+const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "unconfigured";
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
 
 // NEXT_PUBLIC_ prefix required — sanity.config.ts runs in the browser (Studio is a client-side SPA)

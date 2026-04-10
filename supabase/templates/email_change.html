@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="cy" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Cadarnhau cyfeiriad e-bost / Confirm email address</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    .preview { display: none; max-height: 0; overflow: hidden; font-size: 1px; color: #EEE8D8; }
+    @media only screen and (max-width: 620px) {
+      .container { width: 100% !important; }
+      .content-pad { padding: 28px 24px !important; }
+      .header-pad { padding: 24px !important; }
+      .footer-pad { padding: 20px 24px !important; }
+      .h1 { font-size: 22px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#EEE8D8;font-family:system-ui,-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;color:#0A4B68;">
+
+  <!-- Preview text (hidden) -->
+  <div class="preview">Cadarnhewch eich cyfeiriad e-bost newydd ar gyfer eich cyfrif Ynni Cymunedol &#8202;&zwnj;&nbsp;&#8203;</div>
+
+  <!-- Outer wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color:#EEE8D8;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+
+        <!-- Email card -->
+        <table class="container" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width:600px;width:100%;">
+
+          <!-- ── Header ───────────────────────────────────────────────── -->
+          <tr>
+            <td class="header-pad" style="background-color:#0A4B68;padding:32px 40px;border-radius:8px 8px 0 0;">
+              <p style="font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:700;color:#EEE8D8;margin:0 0 4px 0;line-height:1.2;">
+                Ynni Cymunedol
+              </p>
+              <p style="font-family:system-ui,-apple-system,Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#AAB9B6;margin:0 0 20px 0;">
+                Llanfairfechan
+              </p>
+              <div style="height:3px;width:48px;background-color:#E09800;border-radius:2px;"></div>
+            </td>
+          </tr>
+
+          <!-- ── Body ─────────────────────────────────────────────────── -->
+          <tr>
+            <td class="content-pad" style="background-color:#EEE8D8;padding:40px;">
+
+              <!-- Heading Welsh -->
+              <h1 class="h1" style="font-family:Georgia,'Times New Roman',Times,serif;font-size:26px;font-weight:700;color:#0A4B68;margin:0 0 6px 0;line-height:1.3;">
+                Newid Cyfeiriad E-bost
+              </h1>
+              <!-- Heading English -->
+              <p style="font-family:Georgia,'Times New Roman',Times,serif;font-size:16px;font-style:italic;color:#437284;margin:0 0 28px 0;">
+                Email Address Change
+              </p>
+
+              <!-- Body Welsh -->
+              <p style="font-size:16px;color:#0A4B68;line-height:1.65;margin:0 0 6px 0;">
+                Rydych wedi gofyn i newid eich cyfeiriad e-bost ar gyfer eich cyfrif Ynni Cymunedol.
+              </p>
+              <!-- Body English -->
+              <p style="font-size:14px;font-style:italic;color:#437284;line-height:1.65;margin:0 0 28px 0;">
+                You've requested a change to the email address on your Ynni Cymunedol account.
+              </p>
+
+              <!-- ── Address change summary ─────────────────────────── -->
+              <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="100%" style="background-color:#FFFFFF;border:1px solid #658A95;border-left:4px solid #E09800;border-radius:4px;margin:0 0 28px 0;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="100%">
+                      <tr>
+                        <td style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#658A95;padding-right:16px;white-space:nowrap;vertical-align:top;padding-bottom:8px;">
+                          Hen gyfeiriad / Old
+                        </td>
+                        <td style="font-size:14px;color:#0A4B68;font-weight:500;padding-bottom:8px;">
+                          {{ .Email }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#658A95;padding-right:16px;white-space:nowrap;vertical-align:top;">
+                          Cyfeiriad newydd / New
+                        </td>
+                        <td style="font-size:14px;color:#E09800;font-weight:600;">
+                          {{ .NewEmail }}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Instruction Welsh -->
+              <p style="font-size:16px;color:#0A4B68;line-height:1.65;margin:0 0 6px 0;">
+                Cliciwch y botwm isod i gadarnhau'r newid.
+              </p>
+              <!-- Instruction English -->
+              <p style="font-size:14px;font-style:italic;color:#437284;line-height:1.65;margin:0 0 32px 0;">
+                Click the button below to confirm the change.
+              </p>
+
+              <!-- ── CTA Button ─────────────────────────────────────── -->
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="8%" stroke="f" fillcolor="#0A4B68">
+                <w:anchorlock/>
+                <center style="color:#EEE8D8;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;">
+                  Cadarnhau / Confirm
+                </center>
+              </v:roundrect>
+              <![endif]-->
+              <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:0 auto 36px;">
+                <tr>
+                  <!--[if !mso]><!-->
+                  <td style="background-color:#0A4B68;border-radius:4px;text-align:center;">
+                    <a href="{{ .ConfirmationURL }}" target="_blank" style="background-color:#0A4B68;color:#EEE8D8;font-family:system-ui,-apple-system,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:4px;display:inline-block;line-height:1;mso-padding-alt:0;text-align:center;">
+                      <!--<![endif]-->
+                      Cadarnhau / Confirm
+                      <!--[if !mso]><!-->
+                    </a>
+                  </td>
+                  <!--<![endif]-->
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="100%" style="margin:0 0 24px 0;">
+                <tr>
+                  <td style="border-top:1px solid #658A95;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+
+              <!-- Security note -->
+              <p style="font-size:12px;color:#658A95;line-height:1.6;margin:0;">
+                Os na wnaethoch chi ofyn am y newid hwn, anwybyddwch yr e-bost hwn — ni fydd eich cyfeiriad yn newid.<br>
+                <em>If you didn't request this change, you can safely ignore this email — your address will not change.</em>
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- ── Footer ───────────────────────────────────────────────── -->
+          <tr>
+            <td class="footer-pad" style="background-color:#0A4B68;padding:24px 40px;border-radius:8px;margin-top:8px;text-align:center;">
+              <p style="font-size:12px;color:#AAB9B6;margin:0 0 4px 0;text-align:center;">
+                Ynni Cymunedol Llanfairfechan &middot; Cwmni Buddiant Cymunedol
+              </p>
+              <p style="font-size:11px;color:#7C9AA0;margin:0;text-align:center;">
+                Ynni i'r Gymuned, gan y Gymuned &middot; Energy for the Community, by the Community
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="height:8px;"></td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

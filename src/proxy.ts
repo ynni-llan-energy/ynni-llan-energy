@@ -3,7 +3,17 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_PREFIXES = ["/aelodaeth", "/members", "/pleidleisio", "/votes"];
 
+const WIP_PAGE = "/coming-soon";
+const WIP_BYPASS_PREFIXES = [WIP_PAGE, "/api"];
+
 export async function proxy(request: NextRequest) {
+  // Redirect all traffic to the WIP page until launch.
+  // Remove this block (and WIP_PAGE / WIP_BYPASS_PREFIXES above) when ready.
+  const { pathname } = request.nextUrl;
+  if (!WIP_BYPASS_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return NextResponse.redirect(new URL(WIP_PAGE, request.url));
+  }
+
   // If Supabase isn't configured yet, pass every request straight through.
   // This prevents a 500 on all routes (including the draft-mode preview
   // endpoint) when NEXT_PUBLIC_SUPABASE_URL / ANON_KEY are not set.

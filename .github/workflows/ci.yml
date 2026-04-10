@@ -1,0 +1,184 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Unit tests — fast, no server needed
+  # ---------------------------------------------------------------------------
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:ci
+
+  # ---------------------------------------------------------------------------
+  # Build + smoke tests — catch runtime 500s before Vercel deploys
+  # ---------------------------------------------------------------------------
+  smoke-tests:
+    name: Build & smoke tests
+    runs-on: ubuntu-latest
+    env:
+      # Public vars are embedded at build time — required for next build to succeed.
+      # Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as repository
+      # secrets in GitHub (Settings → Secrets → Actions). Without them the app
+      # still builds and smoke-tests public pages (auth is gracefully skipped).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: production
+      # Preview secret can be any stable string in CI
+      NEXT_PUBLIC_SANITY_PREVIEW_SECRET: ci-smoke-test-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server and run smoke tests
+        run: |
+          # Start next start in the background
+          npm start &
+          SERVER_PID=$!
+
+          # Wait up to 30 s for the server to be ready
+          echo "Waiting for server on port 3000..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Server ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          # Run smoke tests
+          BASE_URL=http://localhost:3000 npm run test:smoke:ci
+
+          # Cleanly stop the background server
+          kill $SERVER_PID 2>/dev/null || true
+
+  # ---------------------------------------------------------------------------
+  # E2E tests — full auth flows against local Supabase
+  # ---------------------------------------------------------------------------
+  e2e-tests:
+    name: E2E tests (Playwright + local Supabase)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
+        # supabase start reads supabase/config.toml and runs migrations + seed
+
+      - name: Extract Supabase credentials
+        run: |
+          # `supabase status` exits with code 1 when optional services (imgproxy,
+          # pooler) are stopped. Capture output and suppress exit code — the
+          # essential services are still running.
+          STATUS=$(supabase status 2>&1 || true)
+          echo "$STATUS"
+
+          # The Supabase CLI output format changed in v2: box-drawing table with
+          # "Project URL", "Publishable", "Secret" labels instead of the old
+          # "API URL:", "anon key:", "service_role key:" plain-text lines.
+          # Support both formats with || alternation so neither grep exits non-zero.
+          SUPABASE_URL=$(echo "$STATUS" | grep -oP 'Project URL\s+│\s+\K[^\s│]+' || \
+                         echo "$STATUS" | grep -oP 'API URL:\s+\K\S+' || true)
+
+          ANON_KEY=$(echo "$STATUS" | grep -oP 'Publishable\s+│\s+\K[^\s│]+' || \
+                     echo "$STATUS" | grep -oP 'anon key:\s+\K\S+' || true)
+
+          SERVICE_ROLE_KEY=$(echo "$STATUS" | grep -oP 'Secret\s+│\s+\K[^\s│]+' || \
+                             echo "$STATUS" | grep -oP 'service_role key:\s+\K\S+' || true)
+
+          # Fail explicitly if we still couldn't extract anything
+          if [ -z "$SUPABASE_URL" ] || [ -z "$ANON_KEY" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
+            echo "ERROR: Could not extract Supabase credentials from status output above"
+            exit 1
+          fi
+
+          echo "Extracted URL: $SUPABASE_URL"
+          echo "Extracted anon key prefix: ${ANON_KEY:0:20}..."
+
+          echo "SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
+          # These env vars are also needed for the Next.js build
+          echo "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SITE_URL=http://localhost:3000" >> $GITHUB_ENV
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: production
+          NEXT_PUBLIC_SANITY_PREVIEW_SECRET: ci-e2e-secret
+
+      - name: Start server and run E2E tests
+        run: |
+          # Start the production server in the background
+          npm start &
+          SERVER_PID=$!
+
+          # Wait up to 30 s for the server to be ready
+          echo "Waiting for server on port 3000..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Server ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          # Run Playwright tests (CI env var disables webServer in playwright.config.ts)
+          BASE_URL=http://localhost:3000 npm run test:e2e:ci
+
+          # Cleanly stop the background server
+          kill $SERVER_PID 2>/dev/null || true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

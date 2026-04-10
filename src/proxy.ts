@@ -2,7 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { wholeSiteFlag } from "./flags";
 
-const PROTECTED_PREFIXES = ["/aelodaeth", "/members", "/pleidleisio", "/votes"];
+// Routes that require a valid session
+const PROTECTED_PREFIXES = ["/aelodau"];
+// Routes that should redirect authenticated users to the dashboard
+const AUTH_ROUTES = ["/ymuno", "/mewngofnodi"];
 
 const WIP_PAGE = "/coming-soon";
 const WIP_BYPASS_PREFIXES = [WIP_PAGE, "/api"];
@@ -51,19 +54,30 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  // Refresh session — must not call any other supabase.auth methods between
+  // createServerClient and getUser() to avoid token-refresh races.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    request.nextUrl.pathname.startsWith(prefix)
-  );
+  // Protect member-area routes
+  if (PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    if (!user) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/mewngofnodi";
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
-  if (isProtected && !user) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/mewngofnodi"; // Welsh: "log in"
-    loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
+  // Redirect already-authenticated users away from auth pages
+  if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
+    if (user) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/aelodau";
+      dashboardUrl.search = "";
+      return NextResponse.redirect(dashboardUrl);
+    }
   }
 
   return supabaseResponse;

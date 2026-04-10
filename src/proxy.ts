@@ -1,9 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { wholeSiteFlag } from "./flags";
 
 const PROTECTED_PREFIXES = ["/aelodaeth", "/members", "/pleidleisio", "/votes"];
 
+const WIP_PAGE = "/coming-soon";
+const WIP_BYPASS_PREFIXES = [WIP_PAGE, "/api"];
+
 export async function proxy(request: NextRequest) {
+  // WIP mode: show coming-soon page until the 'whole-site' flag is on.
+  // Toggle the flag in the Vercel Flags dashboard — no deployment needed.
+  const { pathname } = request.nextUrl;
+  if (!WIP_BYPASS_PREFIXES.some((p) => pathname.startsWith(p))) {
+    const siteOpen = await wholeSiteFlag();
+    if (!siteOpen) {
+      return NextResponse.redirect(new URL(WIP_PAGE, request.url));
+    }
+  }
+
   // If Supabase isn't configured yet, pass every request straight through.
   // This prevents a 500 on all routes (including the draft-mode preview
   // endpoint) when NEXT_PUBLIC_SUPABASE_URL / ANON_KEY are not set.

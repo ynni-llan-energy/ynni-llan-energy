@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { get } from "@vercel/edge-config";
+import { wholeSiteFlag } from "./flags";
 
 const PROTECTED_PREFIXES = ["/aelodaeth", "/members", "/pleidleisio", "/votes"];
 
@@ -12,11 +12,7 @@ export async function proxy(request: NextRequest) {
   // Toggle the flag in the Vercel Flags dashboard — no deployment needed.
   const { pathname } = request.nextUrl;
   if (!WIP_BYPASS_PREFIXES.some((p) => pathname.startsWith(p))) {
-    // Read directly from Edge Config (safe in proxy/middleware context).
-    // Falls back to false (WIP on) if EDGE_CONFIG is not configured.
-    const siteOpen = process.env.EDGE_CONFIG
-      ? ((await get<boolean>("whole-site").catch(() => undefined)) ?? false)
-      : false;
+    const siteOpen = await wholeSiteFlag();
     if (!siteOpen) {
       return NextResponse.redirect(new URL(WIP_PAGE, request.url));
     }

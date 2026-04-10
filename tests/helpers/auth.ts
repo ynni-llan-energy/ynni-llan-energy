@@ -59,22 +59,32 @@ export async function createTestUser(
  * Generate a magic link URL for a user via the admin API.
  * Use this in tests to establish an authenticated session without email.
  */
+/**
+ * Generate a callback URL that authenticates a user via token_hash, bypassing
+ * email delivery entirely. Navigating to this URL in Playwright establishes a
+ * real server-side session via /auth/callback → verifyOtp.
+ *
+ * We construct the URL directly rather than navigating through Supabase's
+ * /auth/v1/verify endpoint, which has inconsistent redirect behaviour across
+ * flow types (PKCE vs implicit) depending on Supabase version.
+ */
 export async function generateMagicLink(email: string): Promise<string> {
   const admin = createAdminClient();
   const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
   const { data, error } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
-    options: {
-      redirectTo: `${baseUrl}/auth/callback`,
-    },
   });
 
-  if (error || !data.properties?.action_link) {
+  if (error || !data.properties?.hashed_token) {
     throw new Error(`Failed to generate magic link: ${error?.message}`);
   }
 
-  return data.properties.action_link;
+  const params = new URLSearchParams({
+    token_hash: data.properties.hashed_token,
+    type: "magiclink",
+  });
+  return `${baseUrl}/auth/callback?${params}`;
 }
 
 /**

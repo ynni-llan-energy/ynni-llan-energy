@@ -14,10 +14,15 @@ test.describe("Login page", () => {
     await expect(page.locator("#password")).toHaveCount(0);
   });
 
-  test("submitting a valid email shows sent confirmation", async ({ page }) => {
+  test("submitting a valid email shows sent confirmation", async ({
+    page,
+    testUser,
+  }) => {
     await page.goto("/mewngofnodi");
 
-    await page.fill("#email", "someone@example.com");
+    // Use testUser.email — newer Supabase returns an error for non-existent
+    // addresses when shouldCreateUser:false, so we need a real account.
+    await page.fill("#email", testUser.email);
     await page.click('[type="submit"]');
 
     // Should show the "check your email" success state

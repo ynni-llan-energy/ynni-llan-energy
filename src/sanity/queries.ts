@@ -1,6 +1,12 @@
 import { groq, type SanityClient } from "next-sanity";
 import { sanityClient } from "./client";
 
+// Returns true only when a real Sanity project ID has been provided.
+// Without it, all query functions return empty/null results immediately so
+// that `next build` succeeds before environment variables are configured
+// (e.g. the first Vercel deployment before env vars have been set up).
+const isSanityConfigured = Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID);
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface SanityImageAsset {
@@ -77,6 +83,7 @@ const newsPostSummaryFragment = groq`
 `;
 
 export async function getNewsPosts(client: SanityClient = sanityClient): Promise<NewsPostSummary[]> {
+  if (!isSanityConfigured) return [];
   const isDraft = client !== sanityClient;
   return client.fetch(
     groq`*[_type == "newsPost"] | order(publishedAt desc) {
@@ -88,6 +95,7 @@ export async function getNewsPosts(client: SanityClient = sanityClient): Promise
 }
 
 export async function getNewsPost(slug: string, client: SanityClient = sanityClient): Promise<NewsPost | null> {
+  if (!isSanityConfigured) return null;
   const isDraft = client !== sanityClient;
   return client.fetch(
     groq`*[_type == "newsPost" && slug.current == $slug][0] {
@@ -102,6 +110,7 @@ export async function getNewsPost(slug: string, client: SanityClient = sanityCli
 }
 
 export async function getProjects(client: SanityClient = sanityClient): Promise<ProjectSummary[]> {
+  if (!isSanityConfigured) return [];
   const isDraft = client !== sanityClient;
   return client.fetch(
     groq`*[_type == "project"] | order(startDate desc) {
@@ -121,6 +130,7 @@ export async function getProjects(client: SanityClient = sanityClient): Promise<
 }
 
 export async function getProject(slug: string, client: SanityClient = sanityClient) {
+  if (!isSanityConfigured) return null;
   const isDraft = client !== sanityClient;
   return client.fetch(
     groq`*[_type == "project" && slug.current == $slug][0] {
@@ -144,6 +154,7 @@ export async function getProject(slug: string, client: SanityClient = sanityClie
 }
 
 export async function getSiteSettings(client: SanityClient = sanityClient): Promise<SiteSettings | null> {
+  if (!isSanityConfigured) return null;
   const isDraft = client !== sanityClient;
   return client.fetch(
     groq`*[_type == "siteSettings"][0] {

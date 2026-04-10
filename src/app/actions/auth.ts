@@ -39,16 +39,22 @@ export async function signUp(
   const { full_name, email } = parsed.data;
   const supabase = await createClient();
 
+  const emailRedirectTo = `${getSiteUrl()}/auth/callback`;
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: true,
       data: { full_name },
-      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      emailRedirectTo,
     },
   });
 
   if (error) {
+    console.error("[signUp] Supabase OTP error:", {
+      message: error.message,
+      status: error.status,
+      emailRedirectTo,
+    });
     return { message: error.message };
   }
 
@@ -69,15 +75,22 @@ export async function requestMagicLink(
 
   const supabase = await createClient();
 
+  const emailRedirectTo = `${getSiteUrl()}/auth/callback`;
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      emailRedirectTo,
     },
   });
 
   if (error) {
+    // Log full error server-side (visible in Vercel Functions logs)
+    console.error("[requestMagicLink] Supabase OTP error:", {
+      message: error.message,
+      status: error.status,
+      emailRedirectTo,
+    });
     return { message: error.message };
   }
 

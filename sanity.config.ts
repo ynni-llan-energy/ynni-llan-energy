@@ -11,22 +11,35 @@ const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
 // NEXT_PUBLIC_ prefix required — sanity.config.ts runs in the browser (Studio is a client-side SPA)
 const previewSecret = process.env.NEXT_PUBLIC_SANITY_PREVIEW_SECRET ?? "";
 
+// Map known page document IDs to their frontend paths
+const PAGE_ID_TO_PATH: Record<string, string> = {
+  "page-aelodaeth": "/aelodaeth",
+  "page-hygyrchedd": "/hygyrchedd",
+  "page-preifatrwydd": "/preifatrwydd",
+};
+
 // Resolve the slug for each document type into a preview URL
 async function resolvePreviewUrl(
   _prev: string | undefined,
   ctx: ResolveProductionUrlContext
 ): Promise<string | undefined> {
-  const doc = ctx.document as { _type: string; slug?: { current?: string } };
+  const doc = ctx.document as { _type: string; _id?: string; slug?: { current?: string } };
   const base = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
   const slug = doc.slug?.current;
 
-  const paths: Record<string, string | undefined> = {
-    newsPost: slug ? `/newyddion/${slug}` : "/newyddion",
-    project: slug ? `/prosiectau/${slug}` : "/prosiectau",
-    siteSettings: "/",
-  };
+  let path: string | undefined;
 
-  const path = paths[doc._type];
+  if (doc._type === "page" && doc._id) {
+    path = PAGE_ID_TO_PATH[doc._id];
+  } else {
+    const paths: Record<string, string | undefined> = {
+      newsPost: slug ? `/newyddion/${slug}` : "/newyddion",
+      project: slug ? `/prosiectau/${slug}` : "/prosiectau",
+      siteSettings: "/",
+    };
+    path = paths[doc._type];
+  }
+
   if (!path) return undefined;
 
   return `${base}/api/draft-mode/enable?secret=${previewSecret}&slug=${path}`;

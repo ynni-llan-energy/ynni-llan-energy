@@ -11,7 +11,16 @@ import { redirect } from "next/navigation";
  * to an arbitrary URL.
  */
 
-const VALID_SLUG_PREFIXES = ["/", "/newyddion/", "/prosiectau/", "/am-ni", "/cysylltu"];
+const VALID_SLUG_PREFIXES = [
+  "/",
+  "/newyddion/",
+  "/prosiectau/",
+  "/am-ni",
+  "/cysylltu",
+  "/aelodaeth",
+  "/hygyrchedd",
+  "/preifatrwydd",
+];
 
 function isValidSlug(slug: string): boolean {
   try {

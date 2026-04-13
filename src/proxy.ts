@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { wholeSiteFlag } from "./flags";
 
 // Routes that require a valid session
-const PROTECTED_PREFIXES = ["/aelodau"];
+const PROTECTED_PREFIXES = ["/aelodau", "/gweinyddu"];
 // Routes that should redirect authenticated users to the dashboard
 const AUTH_ROUTES = ["/ymuno", "/mewngofnodi"];
 

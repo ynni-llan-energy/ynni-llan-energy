@@ -81,7 +81,7 @@
 
               <!-- ── CTA Button ─────────────────────────────────────── -->
               <!--[if mso]>
-              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="8%" stroke="f" fillcolor="#0A4B68">
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="8%" stroke="f" fillcolor="#0A4B68">
                 <w:anchorlock/>
                 <center style="color:#EEE8D8;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;">
                   Cadarnhau cyfeiriad e-bost / Confirm email
@@ -92,7 +92,7 @@
                 <tr>
                   <!--[if !mso]><!-->
                   <td style="background-color:#0A4B68;border-radius:4px;text-align:center;">
-                    <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email" target="_blank" style="background-color:#0A4B68;color:#EEE8D8;font-family:system-ui,-apple-system,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:4px;display:inline-block;line-height:1;mso-padding-alt:0;text-align:center;">
+                    <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email" target="_blank" style="background-color:#0A4B68;color:#EEE8D8;font-family:system-ui,-apple-system,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:4px;display:inline-block;line-height:1;mso-padding-alt:0;text-align:center;">
                       <!--<![endif]-->
                       Cadarnhau cyfeiriad e-bost / Confirm&nbsp;email
                       <!--[if !mso]><!-->

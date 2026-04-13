@@ -216,28 +216,14 @@ export default async function MemberDashboard() {
             )}
           </div>
 
-          {/* Profile form */}
-          <section
-            className="bg-white/60 border border-[#0A4B68]/10 rounded-sm p-6"
-            aria-labelledby="profile-heading"
-          >
-            <h2
-              id="profile-heading"
-              className="font-display text-lg font-bold text-[#0A4B68] mb-5"
-              lang="cy"
-            >
-              Fy Manylion
-              <span className="block font-sans font-normal italic text-sm text-[#0A4B68]/60 mt-0.5" lang="en">
-                My Details
-              </span>
-            </h2>
-            <ProfileForm
-              defaultValues={{
-                full_name: member?.full_name ?? null,
-                postcode: member?.postcode ?? null,
-              }}
-            />
-          </section>
+          {/* Profile section — heading, view/edit toggle, and form are
+               all managed inside ProfileForm itself */}
+          <ProfileForm
+            defaultValues={{
+              full_name: member?.full_name ?? null,
+              postcode: member?.postcode ?? null,
+            }}
+          />
 
           {/* Admin link */}
           {member?.is_admin && (

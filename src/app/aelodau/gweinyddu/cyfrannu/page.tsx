@@ -23,15 +23,13 @@ export default async function AdminVolunteerInterestPage() {
     redirect("/mewngofnodi");
   }
 
-  // Verify the user is an active member before granting access.
-  // Phase 2: replace with a dedicated is_admin column or JWT claim.
   const { data: member } = await supabase
     .from("members")
-    .select("status, full_name")
+    .select("is_admin, full_name")
     .eq("id", user.id)
     .single();
 
-  if (member?.status !== "active") {
+  if (!member?.is_admin) {
     redirect("/aelodau");
   }
 
@@ -95,18 +93,6 @@ export default async function AdminVolunteerInterestPage() {
             >
               ← Gweld rolau ar y wefan / View live roles
             </Link>
-          </div>
-
-          {/* Admin notice */}
-          <div className="mb-8 p-4 rounded-sm border border-[#E09800]/30 bg-[#E09800]/8 text-sm text-[#0A4B68]/70">
-            <span className="font-medium text-[#0A4B68]" lang="cy">Nodyn gweinyddol: </span>
-            <span lang="cy">
-              Mae&apos;r dudalen hon ar gyfer aelodau actif yn unig.
-              Bydd mynediad gweinyddwr yn cael ei reoli drwy system rolau yn y dyfodol.
-            </span>
-            <span className="block text-xs italic mt-1 text-[#0A4B68]/50" lang="en">
-              Admin note: This page is for active members only. Proper admin role gating will be added in a future release.
-            </span>
           </div>
 
           {error && (

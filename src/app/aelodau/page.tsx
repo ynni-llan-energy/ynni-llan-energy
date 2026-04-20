@@ -28,7 +28,7 @@ export default async function MemberDashboard() {
 
   const { data: member } = await supabase
     .from("members")
-    .select("full_name, status, eligible_to_vote, postcode, joined_at")
+    .select("full_name, status, eligible_to_vote, postcode, joined_at, is_admin")
     .eq("id", user.id)
     .single();
 
@@ -127,6 +127,49 @@ export default async function MemberDashboard() {
               }}
             />
           </section>
+
+          {/* Admin panel — only rendered for admin users */}
+          {member?.is_admin && (
+            <section
+              className="mt-8 bg-[#0A4B68]/5 border border-[#0A4B68]/15 rounded-sm p-6"
+              aria-labelledby="admin-heading"
+            >
+              <h2
+                id="admin-heading"
+                className="font-display text-lg font-bold text-[#0A4B68] mb-1"
+                lang="cy"
+              >
+                Gweinyddu
+                <span className="block font-sans font-normal italic text-sm text-[#0A4B68]/60 mt-0.5" lang="en">
+                  Administration
+                </span>
+              </h2>
+              <p className="text-xs text-[#0A4B68]/50 mb-5 mt-2" lang="cy">
+                Adnoddau ar gyfer gweinyddwyr y grŵp.{" "}
+                <span lang="en" className="italic">Group administration tools.</span>
+              </p>
+              <ul className="space-y-2">
+                <li>
+                  <a
+                    href="/aelodau/gweinyddu/cyfrannu"
+                    className="flex items-center justify-between gap-4 px-4 py-3 rounded-sm bg-white border border-[#0A4B68]/10 hover:border-[#0A4B68]/30 transition-colors group"
+                  >
+                    <div>
+                      <span className="text-sm font-medium text-[#0A4B68] group-hover:text-[#C07E00] transition-colors block" lang="cy">
+                        Diddordeb Gwirfoddoli
+                      </span>
+                      <span className="text-xs italic text-[#0A4B68]/50" lang="en">
+                        Volunteer interest submissions
+                      </span>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="text-[#0A4B68]/30 group-hover:text-[#C07E00] transition-colors shrink-0">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </a>
+                </li>
+              </ul>
+            </section>
+          )}
 
           {/* Sign out */}
           <div className="mt-10 pt-6 border-t border-[#0A4B68]/10">

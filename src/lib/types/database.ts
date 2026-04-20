@@ -12,6 +12,7 @@ export interface Database {
           email: string;
           full_name: string | null;
           status: MemberStatus;
+          is_admin: boolean;
           eligible_to_vote: boolean;
           postcode: string | null;
           joined_at: string | null;
@@ -23,6 +24,7 @@ export interface Database {
           email: string;
           full_name?: string | null;
           status?: MemberStatus;
+          is_admin?: boolean;
           eligible_to_vote?: boolean;
           postcode?: string | null;
           joined_at?: string | null;
@@ -33,6 +35,7 @@ export interface Database {
           email?: string;
           full_name?: string | null;
           status?: MemberStatus;
+          is_admin?: boolean;
           eligible_to_vote?: boolean;
           postcode?: string | null;
           joined_at?: string | null;

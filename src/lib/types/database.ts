@@ -1,5 +1,6 @@
 export type MemberStatus = "pending" | "active" | "suspended";
 export type BallotStatus = "draft" | "open" | "closed";
+export type RoleStatus = "active" | "filled" | "closed";
 
 export interface Database {
   public: {
@@ -139,6 +140,27 @@ export interface Database {
           sent_at?: string;
         };
         Update: never;
+        Relationships: [];
+      };
+      role_interest: {
+        Row: {
+          id: string;
+          created_at: string;
+          role_slug: string;
+          role_title: string;
+          member_id: string;
+          statement: string | null;
+        };
+        Insert: {
+          id?: string;
+          role_slug: string;
+          role_title: string;
+          member_id: string;
+          statement?: string | null;
+        };
+        Update: {
+          statement?: string | null;
+        };
         Relationships: [];
       };
     };

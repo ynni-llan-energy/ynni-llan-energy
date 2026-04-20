@@ -7,6 +7,7 @@ const navLinks = [
   { href: "/am-ni", cy: "Amdanom Ni", en: "About" },
   { href: "/prosiectau", cy: "Prosiectau", en: "Projects" },
   { href: "/newyddion", cy: "Newyddion", en: "News" },
+  { href: "/cyfrannu", cy: "Cyfrannu", en: "Volunteer" },
   { href: "/cysylltu", cy: "Cysylltu", en: "Contact" },
 ];
 

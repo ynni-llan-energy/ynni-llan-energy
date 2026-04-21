@@ -1,6 +1,9 @@
+import { draftMode } from "next/headers";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { DraftModeBanner } from "@/components/ui/draft-mode-banner";
 import { getSiteSettings } from "@/sanity/queries";
+import { sanityDraftClient } from "@/sanity/client";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,10 +11,20 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const settings = await getSiteSettings();
+  const { isEnabled: isDraftMode } = await draftMode();
+  const client = isDraftMode ? sanityDraftClient : undefined;
+  const settings = await getSiteSettings(client);
+
+  // Fallback intro text matches the initialValue in the CMS schema
+  const introCy =
+    settings?.contactIntro_cy ??
+    "Mae croeso i chi gysylltu \u00e2 ni gydag unrhyw gwestiynau am ein gwaith neu am aelodaeth.";
+  const introEn =
+    settings?.contactIntro_en ?? "We welcome enquiries about our work or membership.";
 
   return (
     <>
+      {isDraftMode && <DraftModeBanner />}
       <Header />
       <main id="main-content" className="flex-1">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -28,10 +41,10 @@ export default async function ContactPage() {
           <div className="flex flex-col gap-8">
             <div>
               <p lang="cy" className="text-lg text-[#0A4B68]/80 leading-relaxed">
-                Mae croeso i chi gysylltu â ni gydag unrhyw gwestiynau am ein gwaith neu am aelodaeth.
+                {introCy}
               </p>
               <p lang="en" className="text-sm italic text-[#0A4B68]/50 mt-2 pl-3 border-l border-[#C07E00]/40 leading-relaxed">
-                We welcome enquiries about our work or membership.
+                {introEn}
               </p>
             </div>
 

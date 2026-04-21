@@ -12,8 +12,8 @@ interface HeroProps {
 export function Hero({
   heading_cy = "Ynni i\u2019r Gymuned, gan y Gymuned",
   heading_en = "Energy for the community, by the community",
-  body_cy = "Rydym yn gwmni buddiant cymunedol sy\u2019n datblygu prosiectau ynni adnewyddadwy er budd pobl Llanfairfechan a\u2019r ardal gyfagos.",
-  body_en = "We are a community interest company developing renewable energy projects for the benefit of Llanfairfechan and the surrounding area.",
+  body_cy,
+  body_en,
 }: HeroProps) {
   return (
     <section
@@ -48,14 +48,20 @@ export function Hero({
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 max-w-lg">
-              <p lang="cy" className="text-lg text-[#0A4B68]/80 leading-relaxed">
-                {body_cy}
-              </p>
-              <p lang="en" className="text-sm italic text-[#0A4B68]/50 pl-3 border-l border-[#C07E00]/40 leading-relaxed">
-                {body_en}
-              </p>
-            </div>
+            {(body_cy || body_en) && (
+              <div className="flex flex-col gap-3 max-w-lg">
+                {body_cy && (
+                  <p lang="cy" className="text-lg text-[#0A4B68]/80 leading-relaxed">
+                    {body_cy}
+                  </p>
+                )}
+                {body_en && (
+                  <p lang="en" className="text-sm italic text-[#0A4B68]/50 pl-3 border-l border-[#C07E00]/40 leading-relaxed">
+                    {body_en}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-4">
               <Link

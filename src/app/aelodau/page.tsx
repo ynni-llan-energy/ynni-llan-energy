@@ -28,7 +28,9 @@ export default async function MemberDashboard() {
 
   const { data: member } = await supabase
     .from("members")
-    .select("full_name, status, eligible_to_vote, postcode, joined_at")
+    .select(
+      "full_name, status, eligible_to_vote, postcode, joined_at, membership_expires_at, is_admin"
+    )
     .eq("id", user.id)
     .single();
 
@@ -39,6 +41,24 @@ export default async function MemberDashboard() {
         year: "numeric",
       })
     : null;
+
+  const expiresAt = member?.membership_expires_at
+    ? new Date(member.membership_expires_at)
+    : null;
+
+  const expiryDateStr = expiresAt
+    ? expiresAt.toLocaleDateString("cy-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  const daysUntilExpiry = expiresAt
+    ? Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const status = member?.status ?? "pending";
 
   return (
     <>
@@ -66,8 +86,34 @@ export default async function MemberDashboard() {
             )}
           </div>
 
-          {/* Verification notice */}
-          {!member?.eligible_to_vote && (
+          {/* Status-specific notices */}
+          {status === "expired" && (
+            <div className="mb-8 p-5 rounded-sm border border-[#E09800]/40 bg-[#E09800]/10">
+              <div className="flex gap-3">
+                <span className="text-[#E09800] text-lg mt-0.5" aria-hidden>↻</span>
+                <div>
+                  <p className="text-sm font-medium text-[#0A4B68]" lang="cy">
+                    Mae eich aelodaeth wedi dod i ben a bydd angen ei hadnewyddu.
+                  </p>
+                  <p className="text-xs italic text-[#0A4B68]/60 mt-1" lang="en">
+                    Your membership has expired and will need to be renewed.
+                  </p>
+                  <p className="text-sm text-[#0A4B68]/80 mt-3" lang="cy">
+                    Bydd ein tîm aelodaeth yn adolygu eich cais adnewyddu ac yn
+                    cysylltu â chi. Yn y cyfamser, gwiriwch fod eich manylion
+                    isod yn gywir ac yn gyfredol.
+                  </p>
+                  <p className="text-xs italic text-[#0A4B68]/50 mt-2" lang="en">
+                    Our membership team will review your renewal and be in
+                    touch. In the meantime, please check that your details below
+                    are correct and up to date.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {status === "pending" && (
             <div className="mb-8 p-5 rounded-sm border border-[#E09800]/40 bg-[#E09800]/10">
               <div className="flex gap-3">
                 <span className="text-[#E09800] text-lg mt-0.5" aria-hidden>⚠</span>
@@ -93,40 +139,105 @@ export default async function MemberDashboard() {
             </div>
           )}
 
+          {status === "active" &&
+            daysUntilExpiry !== null &&
+            daysUntilExpiry <= 30 && (
+              <div className="mb-8 p-5 rounded-sm border border-[#E09800]/40 bg-[#E09800]/10">
+                <div className="flex gap-3">
+                  <span className="text-[#E09800] text-lg mt-0.5" aria-hidden>⚠</span>
+                  <div>
+                    <p className="text-sm font-medium text-[#0A4B68]" lang="cy">
+                      Mae eich aelodaeth yn dod i ben mewn {daysUntilExpiry} diwrnod.
+                    </p>
+                    <p className="text-xs italic text-[#0A4B68]/60 mt-1" lang="en">
+                      Your membership expires in {daysUntilExpiry} days.
+                    </p>
+                    <p className="text-sm text-[#0A4B68]/80 mt-3" lang="cy">
+                      Bydd angen dilysu eich aelodaeth eto. Sicrhewch fod eich
+                      manylion isod yn gywir a bydd ein tîm aelodaeth yn cysylltu
+                      â chi ar ôl i&apos;ch aelodaeth ddod i ben.
+                    </p>
+                    <p className="text-xs italic text-[#0A4B68]/50 mt-2" lang="en">
+                      Your membership will need to be re-verified. Please ensure
+                      your details below are correct and our membership team will
+                      be in touch after your membership expires.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          {status === "suspended" && (
+            <div className="mb-8 p-5 rounded-sm border border-red-200 bg-red-50">
+              <div className="flex gap-3">
+                <span className="text-red-600 text-lg mt-0.5" aria-hidden>✕</span>
+                <div>
+                  <p className="text-sm font-medium text-red-800" lang="cy">
+                    Mae eich aelodaeth wedi ei hatal.
+                  </p>
+                  <p className="text-xs italic text-red-600/70 mt-1" lang="en">
+                    Your membership has been suspended.
+                  </p>
+                  <p className="text-sm text-red-700/80 mt-3" lang="cy">
+                    Cysylltwch â ni i gael rhagor o wybodaeth.
+                  </p>
+                  <p className="text-xs italic text-red-600/60 mt-2" lang="en">
+                    Please contact us for more information.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Member status badge */}
-          <div className="mb-8 flex items-center gap-3">
+          <div className="mb-8 flex items-center gap-3 flex-wrap">
             <span className="text-sm text-[#0A4B68]/60" lang="cy">Statws:</span>
-            <MemberStatusBadge status={member?.status ?? "pending"} />
+            <MemberStatusBadge status={status} />
             {member?.eligible_to_vote && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#2B8050]/10 text-[#2B8050] text-xs font-medium">
                 <span aria-hidden>✓</span>
                 <span lang="cy">Dilysedig i bleidleisio</span>
               </span>
             )}
+            {expiryDateStr && status === "active" && (
+              <span
+                className={`text-xs ${
+                  daysUntilExpiry !== null && daysUntilExpiry <= 30
+                    ? "text-[#E09800] font-medium"
+                    : "text-[#0A4B68]/40"
+                }`}
+              >
+                <span lang="cy">Yn dod i ben:</span>{" "}
+                <span lang="en" className="italic">Expires:</span>{" "}
+                <time dateTime={member!.membership_expires_at!}>
+                  {expiryDateStr}
+                </time>
+              </span>
+            )}
           </div>
 
-          {/* Profile form */}
-          <section
-            className="bg-white/60 border border-[#0A4B68]/10 rounded-sm p-6"
-            aria-labelledby="profile-heading"
-          >
-            <h2
-              id="profile-heading"
-              className="font-display text-lg font-bold text-[#0A4B68] mb-5"
-              lang="cy"
-            >
-              Fy Manylion
-              <span className="block font-sans font-normal italic text-sm text-[#0A4B68]/60 mt-0.5" lang="en">
-                My Details
-              </span>
-            </h2>
-            <ProfileForm
-              defaultValues={{
-                full_name: member?.full_name ?? null,
-                postcode: member?.postcode ?? null,
-              }}
-            />
-          </section>
+          {/* Profile section — heading, view/edit toggle, and form are
+               all managed inside ProfileForm itself */}
+          <ProfileForm
+            defaultValues={{
+              full_name: member?.full_name ?? null,
+              postcode: member?.postcode ?? null,
+            }}
+          />
+
+          {/* Admin link */}
+          {member?.is_admin && (
+            <div className="mt-6">
+              <a
+                href="/gweinyddu"
+                className="inline-flex items-center gap-1.5 text-sm text-[#0A4B68] hover:text-[#0A4B68]/80 underline underline-offset-2 transition-colors"
+              >
+                <span aria-hidden>⚙</span>
+                <span lang="cy">Gweinyddu Aelodaeth</span>
+                <span className="italic opacity-70" lang="en"> / Membership Administration</span>
+              </a>
+            </div>
+          )}
 
           {/* Sign out */}
           <div className="mt-10 pt-6 border-t border-[#0A4B68]/10">
@@ -164,6 +275,11 @@ function MemberStatusBadge({ status }: { status: string }) {
       cy: "Wedi atal",
       en: "Suspended",
       className: "bg-red-50 text-red-700 border border-red-200",
+    },
+    expired: {
+      cy: "Wedi dod i ben",
+      en: "Expired",
+      className: "bg-orange-50 text-orange-700 border border-orange-200",
     },
   };
   const c = config[status] ?? config.pending;

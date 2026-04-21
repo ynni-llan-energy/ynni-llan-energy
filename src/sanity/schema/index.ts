@@ -4,7 +4,8 @@ import { newsPost } from "./news-post";
 import { project } from "./project";
 import { siteSettings } from "./site-settings";
 import { person } from "./person";
+import { page } from "./page";
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [newsPost, project, siteSettings, person],
+  types: [newsPost, project, siteSettings, person, page],
 };

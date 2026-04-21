@@ -4,6 +4,8 @@ import { Footer } from "@/components/layout/footer";
 import { DraftModeBanner } from "@/components/ui/draft-mode-banner";
 import { getSiteSettings } from "@/sanity/queries";
 import { sanityDraftClient } from "@/sanity/client";
+import { PortableText } from "@portabletext/react";
+import { portableTextComponents } from "@/components/portable-text-components";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -47,15 +49,15 @@ export default async function AboutPage() {
           </div>
 
           <div className="flex flex-col gap-6">
-            {settings?.aboutSummary_cy ? (
+            {settings?.aboutSummary_cy && settings.aboutSummary_cy.length > 0 ? (
               <>
-                <p lang="cy" className="text-lg text-[#0A4B68]/80 leading-relaxed">
-                  {settings.aboutSummary_cy}
-                </p>
-                {settings.aboutSummary_en && (
-                  <p lang="en" className="text-base italic text-[#0A4B68]/50 pl-4 border-l-2 border-[#C07E00]/40 leading-relaxed">
-                    {settings.aboutSummary_en}
-                  </p>
+                <div lang="cy" className="text-[#0A4B68]/80">
+                  <PortableText value={settings.aboutSummary_cy as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
+                </div>
+                {settings.aboutSummary_en && settings.aboutSummary_en.length > 0 && (
+                  <div lang="en" className="italic text-[#0A4B68]/50 pl-4 border-l-2 border-[#C07E00]/40">
+                    <PortableText value={settings.aboutSummary_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
+                  </div>
                 )}
               </>
             ) : (

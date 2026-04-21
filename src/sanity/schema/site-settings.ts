@@ -48,14 +48,14 @@ export const siteSettings = defineType({
     defineField({
       name: "aboutSummary_cy",
       title: "Crynodeb amdanom ni (Cymraeg)",
-      type: "text",
-      rows: 4,
+      type: "array",
+      of: [{ type: "block" }],
     }),
     defineField({
       name: "aboutSummary_en",
       title: "About summary (English)",
-      type: "text",
-      rows: 4,
+      type: "array",
+      of: [{ type: "block" }],
     }),
 
     // ─── CIC Principles (About page) ─────────────────────────────────────────

@@ -56,8 +56,8 @@ export interface SiteSettings {
   heroHeading_en: string;
   heroBody_cy: string | null;
   heroBody_en: string | null;
-  aboutSummary_cy: string | null;
-  aboutSummary_en: string | null;
+  aboutSummary_cy: unknown[] | null;
+  aboutSummary_en: unknown[] | null;
   principles: Principle[] | null;
   contactIntro_cy: string | null;
   contactIntro_en: string | null;

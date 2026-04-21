@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { verifyMember, revokeMembership } from "@/app/actions/admin";
+import { ConfirmForm } from "@/components/admin/confirm-form";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -199,24 +200,18 @@ export default async function AdminDashboard() {
                       <ExpiryCell expiresAt={m.membership_expires_at} />
                     </td>
                     <td className="py-3 px-3 text-right">
-                      <form action={revokeMembership.bind(null, m.id)}>
+                      <ConfirmForm
+                        action={revokeMembership.bind(null, m.id)}
+                        confirmMessage={`Dirymu aelodaeth ${m.full_name ?? m.email}?\nRevoke membership for ${m.full_name ?? m.email}?`}
+                      >
                         <button
                           type="submit"
                           className="px-3 py-1.5 rounded text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
-                          onClick={(e) => {
-                            if (
-                              !confirm(
-                                `Dirymu aelodaeth ${m.full_name ?? m.email}?\nRevoke membership for ${m.full_name ?? m.email}?`
-                              )
-                            ) {
-                              e.preventDefault();
-                            }
-                          }}
                         >
                           <span lang="cy">Dirymu</span>
                           <span className="ml-1 opacity-70 italic" lang="en">/ Revoke</span>
                         </button>
-                      </form>
+                      </ConfirmForm>
                     </td>
                   </tr>
                 ))}

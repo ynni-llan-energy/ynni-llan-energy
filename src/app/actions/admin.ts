@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import * as React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { resend, FROM_ADDRESS } from "@/lib/resend";
+import { getResend, FROM_ADDRESS } from "@/lib/resend";
 import { MemberVerifiedEmail } from "@/emails/MemberVerifiedEmail";
 
 function getSiteUrl(): string {
@@ -79,7 +79,7 @@ export async function verifyMember(memberId: string) {
     );
 
     try {
-      await resend.emails.send({
+      await getResend().emails.send({
         from: FROM_ADDRESS,
         to: member.email,
         subject: "Aelodaeth wedi ei chadarnhau / Membership confirmed",

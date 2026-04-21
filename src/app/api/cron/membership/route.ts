@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as React from "react";
 import { createServiceClient } from "@/lib/supabase/service";
-import { resend, FROM_ADDRESS } from "@/lib/resend";
+import { getResend, FROM_ADDRESS } from "@/lib/resend";
 import { RenewalReminderEmail } from "@/emails/RenewalReminderEmail";
 
 /**
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       });
 
       try {
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM_ADDRESS,
           to: member.email,
           subject:
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
       });
 
       try {
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM_ADDRESS,
           to: member.email,
           subject:

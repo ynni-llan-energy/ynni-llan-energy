@@ -1,12 +1,17 @@
 import { Resend } from "resend";
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
 
-/**
- * Default from address.
- * The domain must be verified in your Resend account.
- * Update RESEND_FROM_ADDRESS in your environment to override.
- */
+export function getResend(): Resend {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY environment variable is not set.");
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
+
 export const FROM_ADDRESS =
   process.env.RESEND_FROM_ADDRESS ??
   "Ynni Cymunedol Llanfairfechan <aelodaeth@ynni-llan.cymru>";

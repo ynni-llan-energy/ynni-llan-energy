@@ -64,15 +64,32 @@ export interface VolunteerRole extends VolunteerRoleSummary {
   coverImage: SanityImageAsset | null;
 }
 
+export interface Principle {
+  _key: string;
+  cy: string;
+  en: string;
+}
+
 export interface SiteSettings {
   heroHeading_cy: string;
   heroHeading_en: string;
   heroBody_cy: string | null;
   heroBody_en: string | null;
-  aboutSummary_cy: string | null;
-  aboutSummary_en: string | null;
+  aboutSummary_cy: unknown[] | null;
+  aboutSummary_en: unknown[] | null;
+  principles: Principle[] | null;
+  contactIntro_cy: string | null;
+  contactIntro_en: string | null;
   contactEmail: string | null;
   socialLinks: { platform: string; url: string }[];
+}
+
+export interface Page {
+  _id: string;
+  heading_cy: string;
+  heading_en: string | null;
+  body_cy: unknown[] | null;
+  body_en: unknown[] | null;
 }
 
 // ─── Cache options ────────────────────────────────────────────────────────────
@@ -223,10 +240,33 @@ export async function getSiteSettings(client: SanityClient = sanityClient): Prom
       heroBody_en,
       aboutSummary_cy,
       aboutSummary_en,
+      principles[] { _key, cy, en },
+      contactIntro_cy,
+      contactIntro_en,
       contactEmail,
       socialLinks
     }`,
     {},
+    isDraft ? draftFetchOptions : fetchOptions(300)
+  );
+}
+
+/**
+ * Fetch a generic content page by its Sanity document ID.
+ * Known IDs: "page-aelodaeth", "page-hygyrchedd", "page-preifatrwydd"
+ */
+export async function getPage(id: string, client: SanityClient = sanityClient): Promise<Page | null> {
+  if (!isSanityConfigured) return null;
+  const isDraft = client !== sanityClient;
+  return client.fetch(
+    groq`*[_type == "page" && _id == $id][0] {
+      _id,
+      heading_cy,
+      heading_en,
+      body_cy,
+      body_en
+    }`,
+    { id },
     isDraft ? draftFetchOptions : fetchOptions(300)
   );
 }

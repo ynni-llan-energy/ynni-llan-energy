@@ -6,6 +6,7 @@ import { DraftModeBanner } from "@/components/ui/draft-mode-banner";
 import { getNewsPost, getNewsPosts } from "@/sanity/queries";
 import { sanityDraftClient } from "@/sanity/client";
 import { PortableText } from "@portabletext/react";
+import { portableTextComponents } from "@/components/portable-text-components";
 import type { Metadata } from "next";
 
 interface Props {
@@ -59,15 +60,15 @@ export default async function NewsPostPage({ params }: Props) {
             )}
           </header>
           {post.body_cy && post.body_cy.length > 0 && (
-            <div lang="cy" className="prose prose-slate max-w-none mb-10 [&>p]:text-[#0A4B68]/80 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68]">
-              <PortableText value={post.body_cy as Parameters<typeof PortableText>[0]["value"]} />
+            <div lang="cy" className="text-[#0A4B68]/80 mb-10">
+              <PortableText value={post.body_cy as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
             </div>
           )}
           {post.body_en && post.body_en.length > 0 && (
             <div lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
               <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
-              <div className="prose prose-slate max-w-none italic [&>p]:text-[#0A4B68]/60 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68]">
-                <PortableText value={post.body_en as Parameters<typeof PortableText>[0]["value"]} />
+              <div className="italic text-[#0A4B68]/60">
+                <PortableText value={post.body_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
               </div>
             </div>
           )}

@@ -6,7 +6,6 @@ import { Footer } from "@/components/layout/footer";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-// Always server-render — never statically pre-render admin pages
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -19,21 +18,16 @@ export default async function AdminVolunteerInterestPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/mewngofnodi");
-  }
+  if (!user) redirect("/mewngofnodi");
 
   const { data: member } = await supabase
     .from("members")
-    .select("is_admin, full_name")
+    .select("is_admin")
     .eq("id", user.id)
     .single();
 
-  if (!member?.is_admin) {
-    redirect("/aelodau");
-  }
+  if (!member?.is_admin) redirect("/aelodau");
 
-  // Use service client to bypass RLS and read all submissions
   const serviceClient = createServiceClient();
 
   const { data: interests, error } = await serviceClient
@@ -41,7 +35,6 @@ export default async function AdminVolunteerInterestPage() {
     .select("id, created_at, role_slug, role_title, statement, member_id")
     .order("created_at", { ascending: false });
 
-  // Fetch member details for display
   const memberIds = [...new Set((interests ?? []).map((i) => i.member_id))];
   const { data: members } = memberIds.length
     ? await serviceClient
@@ -54,7 +47,6 @@ export default async function AdminVolunteerInterestPage() {
     (members ?? []).map((m) => [m.id, m])
   );
 
-  // Group by role for easier reading
   const byRole = new Map<string, { title: string; items: typeof interests }>();
   for (const item of interests ?? []) {
     if (!byRole.has(item.role_slug)) {
@@ -72,13 +64,12 @@ export default async function AdminVolunteerInterestPage() {
           <div className="mb-10 flex items-start justify-between gap-4 flex-wrap">
             <div>
               <nav className="text-xs text-[#0A4B68]/50 mb-3">
-                <Link href="/aelodau" className="hover:text-[#C07E00] transition-colors">
-                  Fy Nghyfrif
+                <Link href="/gweinyddu" className="hover:text-[#C07E00] transition-colors">
+                  <span lang="cy">Gweinyddu</span>
+                  <span className="italic ml-1 opacity-70" lang="en">/ Admin</span>
                 </Link>
                 {" / "}
-                <span>Gweinyddu</span>
-                {" / "}
-                <span>Cyfrannu</span>
+                <span lang="cy">Cyfrannu</span>
               </nav>
               <h1 className="font-display text-3xl font-bold text-[#0A4B68]" lang="cy">
                 Diddordeb Gwirfoddoli
@@ -91,13 +82,16 @@ export default async function AdminVolunteerInterestPage() {
               href="/cyfrannu"
               className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors"
             >
-              ← Gweld rolau ar y wefan / View live roles
+              ← <span lang="cy">Gweld rolau ar y wefan</span>
+              <span className="italic ml-1" lang="en">/ View live roles</span>
             </Link>
           </div>
 
           {error && (
             <div className="mb-8 p-4 rounded-sm bg-red-50 border border-red-200 text-sm text-red-700" role="alert">
-              Methwyd llwytho / Failed to load: {error.message}
+              <span lang="cy">Methwyd llwytho</span>
+              <span className="italic ml-1" lang="en">/ Failed to load:</span>{" "}
+              {error.message}
             </div>
           )}
 

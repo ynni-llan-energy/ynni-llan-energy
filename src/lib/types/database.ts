@@ -1,4 +1,4 @@
-export type MemberStatus = "pending" | "active" | "suspended";
+export type MemberStatus = "pending" | "active" | "suspended" | "expired";
 export type BallotStatus = "draft" | "open" | "closed";
 export type RoleStatus = "active" | "filled" | "closed";
 
@@ -18,6 +18,8 @@ export interface Database {
           joined_at: string | null;
           approved_at: string | null;
           approved_by: string | null;
+          membership_expires_at: string | null;
+          renewal_notified_at: string | null;
         };
         Insert: {
           id?: string;
@@ -30,6 +32,8 @@ export interface Database {
           joined_at?: string | null;
           approved_at?: string | null;
           approved_by?: string | null;
+          membership_expires_at?: string | null;
+          renewal_notified_at?: string | null;
         };
         Update: {
           email?: string;
@@ -41,6 +45,8 @@ export interface Database {
           joined_at?: string | null;
           approved_at?: string | null;
           approved_by?: string | null;
+          membership_expires_at?: string | null;
+          renewal_notified_at?: string | null;
         };
         Relationships: [];
       };

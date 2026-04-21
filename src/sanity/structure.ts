@@ -1,11 +1,12 @@
 import { type StructureResolver } from "sanity/structure";
-import { CogIcon, DocumentTextIcon, SunIcon, UserIcon } from "@sanity/icons";
+import { CogIcon, DocumentTextIcon, DocumentIcon, SunIcon, UserIcon } from "@sanity/icons";
 
 /**
  * Custom Studio sidebar structure.
  * - Pins "Site Settings" as a singleton (no list view, just the document).
  * - Groups News and Projects cleanly.
- * - Hides siteSettings from the default document list.
+ * - Exposes generic content pages (Membership, Accessibility, Privacy) as
+ *   singleton-style entries so editors cannot accidentally create extras.
  */
 export const structure: StructureResolver = (S) =>
   S.list()
@@ -34,6 +35,46 @@ export const structure: StructureResolver = (S) =>
         .title("Prosiectau / Projects")
         .icon(SunIcon)
         .child(S.documentTypeList("project").title("Prosiectau / Projects")),
+
+      S.divider(),
+
+      // Generic content pages — each is a singleton identified by a fixed document ID
+      S.listItem()
+        .title("Tudalennau / Pages")
+        .icon(DocumentIcon)
+        .child(
+          S.list()
+            .title("Tudalennau / Pages")
+            .items([
+              S.listItem()
+                .title("Aelodaeth / Membership")
+                .icon(DocumentIcon)
+                .child(
+                  S.document()
+                    .schemaType("page")
+                    .documentId("page-aelodaeth")
+                    .title("Aelodaeth / Membership")
+                ),
+              S.listItem()
+                .title("Hygyrchedd / Accessibility")
+                .icon(DocumentIcon)
+                .child(
+                  S.document()
+                    .schemaType("page")
+                    .documentId("page-hygyrchedd")
+                    .title("Hygyrchedd / Accessibility")
+                ),
+              S.listItem()
+                .title("Preifatrwydd / Privacy")
+                .icon(DocumentIcon)
+                .child(
+                  S.document()
+                    .schemaType("page")
+                    .documentId("page-preifatrwydd")
+                    .title("Preifatrwydd / Privacy")
+                ),
+            ])
+        ),
 
       S.divider(),
 

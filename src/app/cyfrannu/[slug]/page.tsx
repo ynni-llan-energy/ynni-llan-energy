@@ -8,6 +8,7 @@ import { sanityDraftClient } from "@/sanity/client";
 import { PortableText } from "@portabletext/react";
 import { InterestForm } from "@/components/volunteer/interest-form";
 import { createClient } from "@/lib/supabase/server";
+import { ScrollToEnglish } from "@/components/ui/scroll-to-english";
 import type { Metadata } from "next";
 
 interface Props {
@@ -57,13 +58,16 @@ export default async function VolunteerRolePage({ params }: Props) {
       <main id="main-content" className="flex-1">
         <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
-          <a
-            href="/cyfrannu"
-            className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors mb-8 inline-block"
-          >
-            ← <span lang="cy">Cyfrannu</span>{" "}
-            <span lang="en" className="italic opacity-60">/ Volunteer</span>
-          </a>
+          <div className="flex items-center justify-between mb-8">
+            <a
+              href="/cyfrannu"
+              className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors inline-block"
+            >
+              ← <span lang="cy">Cyfrannu</span>{" "}
+              <span lang="en" className="italic opacity-60">/ Volunteer</span>
+            </a>
+            {role.body_en && role.body_en.length > 0 && <ScrollToEnglish />}
+          </div>
 
           <header className="mb-10">
             <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -138,8 +142,10 @@ export default async function VolunteerRolePage({ params }: Props) {
 
           {/* English full description */}
           {role.body_en && role.body_en.length > 0 && (
-            <div lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
+            <div id="en" lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
               <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
+              <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-3">{role.title_en}</h2>
+              {role.summary_en && <p lang="en" className="text-lg text-[#0A4B68]/80 leading-relaxed mb-6">{role.summary_en}</p>}
               <div className="prose prose-slate max-w-none italic [&>p]:text-[#0A4B68]/60 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68]">
                 <PortableText value={role.body_en as Parameters<typeof PortableText>[0]["value"]} />
               </div>

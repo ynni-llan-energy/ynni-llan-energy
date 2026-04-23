@@ -6,9 +6,7 @@ import { flag } from "flags/next";
  * true  → site is open (normal operation)
  * false → WIP redirect is active
  *
- * In production: defaults to false (coming soon). Override per-session via the
- * Vercel Toolbar (requires FLAGS_SECRET env var), or set defaultValue: true to
- * open the site for all users.
+ * Change decide() to return false (and deploy) to re-enable the coming-soon page.
  * In preview/development/CI: always true so smoke and E2E tests run against
  * real pages rather than the coming-soon redirect.
  */
@@ -23,6 +21,6 @@ export const wholeSiteFlag = flag<boolean>({
   ],
   decide() {
     if (process.env.VERCEL_ENV !== "production") return true;
-    return false;
+    return true;
   },
 });

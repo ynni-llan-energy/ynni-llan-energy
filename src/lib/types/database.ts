@@ -20,6 +20,7 @@ export interface Database {
           approved_by: string | null;
           membership_expires_at: string | null;
           renewal_notified_at: string | null;
+          policy_consent_at: string | null;
         };
         Insert: {
           id?: string;
@@ -34,6 +35,7 @@ export interface Database {
           approved_by?: string | null;
           membership_expires_at?: string | null;
           renewal_notified_at?: string | null;
+          policy_consent_at?: string | null;
         };
         Update: {
           email?: string;
@@ -47,6 +49,7 @@ export interface Database {
           approved_by?: string | null;
           membership_expires_at?: string | null;
           renewal_notified_at?: string | null;
+          policy_consent_at?: string | null;
         };
         Relationships: [];
       };

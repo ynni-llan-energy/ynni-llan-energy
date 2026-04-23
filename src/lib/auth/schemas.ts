@@ -7,6 +7,9 @@ export const SignUpSchema = z.object({
     .max(100)
     .trim(),
   email: z.string().trim().email("Cyfeiriad e-bost annilys / Invalid email address"),
+  policy_consent: z
+    .boolean()
+    .refine((v) => v === true, "Rhaid cytuno i'r polisïau / You must agree to the policies"),
 });
 
 export const MagicLinkSchema = z.object({

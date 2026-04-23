@@ -14,7 +14,7 @@ import { flag } from "flags/next";
  */
 export const wholeSiteFlag = flag<boolean>({
   key: "whole-site",
-  defaultValue: false,
+  defaultValue: true,
   description:
     "Enables the full site; when off all traffic sees the coming-soon page.",
   options: [

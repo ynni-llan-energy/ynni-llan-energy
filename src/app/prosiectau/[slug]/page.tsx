@@ -7,6 +7,7 @@ import { getProject, getProjects } from "@/sanity/queries";
 import { sanityDraftClient } from "@/sanity/client";
 import { PortableText } from "@portabletext/react";
 import { portableTextComponents } from "@/components/portable-text-components";
+import { ScrollToEnglish } from "@/components/ui/scroll-to-english";
 import type { Metadata } from "next";
 
 interface Props {
@@ -43,9 +44,12 @@ export default async function ProjectPage({ params }: Props) {
       <Header />
       <main id="main-content" className="flex-1">
         <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <a href="/prosiectau" className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors mb-8 inline-block">
-            ← <span lang="cy">Prosiectau</span> <span lang="en" className="italic opacity-60">/ Projects</span>
-          </a>
+          <div className="flex items-center justify-between mb-8">
+            <a href="/prosiectau" className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors inline-block">
+              ← <span lang="cy">Prosiectau</span> <span lang="en" className="italic opacity-60">/ Projects</span>
+            </a>
+            {project.body_en && project.body_en.length > 0 && <ScrollToEnglish />}
+          </div>
           <header className="mb-10">
             <div className="flex flex-wrap items-center gap-4 mb-4">
               <span className="text-xs font-medium text-[#2B8050] uppercase tracking-wide">{project.status.replace("_", " ")}</span>
@@ -62,8 +66,10 @@ export default async function ProjectPage({ params }: Props) {
             </div>
           )}
           {project.body_en && project.body_en.length > 0 && (
-            <div lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
+            <div id="en" lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
               <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
+              <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-3">{project.title_en}</h2>
+              {project.summary_en && <p lang="en" className="text-lg text-[#0A4B68]/80 leading-relaxed mb-6">{project.summary_en}</p>}
               <div className="italic text-[#0A4B68]/60">
                 <PortableText value={project.body_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
               </div>

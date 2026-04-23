@@ -10,6 +10,10 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
 
+// Use a pre-installed Chromium binary when PLAYWRIGHT_CHROMIUM_PATH is set
+// (needed in environments where the browser download is blocked).
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
+
 export default defineConfig({
   testDir: "./tests",
 
@@ -33,7 +37,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], ...(executablePath && { executablePath }) },
     },
   ],
 

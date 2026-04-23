@@ -7,6 +7,7 @@ import { getNewsPost, getNewsPosts } from "@/sanity/queries";
 import { sanityDraftClient } from "@/sanity/client";
 import { PortableText } from "@portabletext/react";
 import { portableTextComponents } from "@/components/portable-text-components";
+import { ScrollToEnglish } from "@/components/ui/scroll-to-english";
 import type { Metadata } from "next";
 
 interface Props {
@@ -43,9 +44,12 @@ export default async function NewsPostPage({ params }: Props) {
       <Header />
       <main id="main-content" className="flex-1">
         <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <a href="/newyddion" className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors mb-8 inline-block">
-            ← <span lang="cy">Newyddion</span> <span lang="en" className="italic opacity-60">/ News</span>
-          </a>
+          <div className="flex items-center justify-between mb-8">
+            <a href="/newyddion" className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors inline-block">
+              ← <span lang="cy">Newyddion</span> <span lang="en" className="italic opacity-60">/ News</span>
+            </a>
+            {post.body_en && post.body_en.length > 0 && <ScrollToEnglish />}
+          </div>
           <header className="mb-10">
             <time dateTime={post.publishedAt} className="text-xs text-[#C07E00] font-medium tracking-wide block mb-4">
               {new Date(post.publishedAt).toLocaleDateString("cy-GB", { day: "numeric", month: "long", year: "numeric" })}
@@ -65,8 +69,9 @@ export default async function NewsPostPage({ params }: Props) {
             </div>
           )}
           {post.body_en && post.body_en.length > 0 && (
-            <div lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
+            <div id="en" lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
               <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
+              <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-6">{post.title_en}</h2>
               <div className="italic text-[#0A4B68]/60">
                 <PortableText value={post.body_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
               </div>

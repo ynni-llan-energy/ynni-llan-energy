@@ -5,10 +5,10 @@ test.describe("Member dashboard (/aelodau)", () => {
     authenticatedPage,
     testUser,
   }) => {
-    // The profile form should be pre-filled with the member's name
-    const nameInput = authenticatedPage.locator("#full_name");
-    await expect(nameInput).toBeVisible();
-    await expect(nameInput).toHaveValue(testUser.fullName);
+    // View mode shows the name as text, not an input
+    await expect(
+      authenticatedPage.getByText(testUser.fullName)
+    ).toBeVisible();
   });
 
   test("shows voting-not-verified notice for a new member", async ({
@@ -35,14 +35,15 @@ test.describe("Member dashboard (/aelodau)", () => {
   }) => {
     const newName = `${testUser.fullName} Updated`;
 
-    // Clear and retype the name field
+    // Open edit mode first (ProfileForm starts in view mode)
+    await authenticatedPage.click('button[aria-label*="Golygu"]');
+
+    // Fill in the inputs now visible in edit mode
     await authenticatedPage.fill("#full_name", newName);
     await authenticatedPage.fill("#postcode", "LL33 0AA");
 
-    // Click the profile form's submit button
-    await authenticatedPage.click(
-      'section [type="submit"]'
-    );
+    // Submit
+    await authenticatedPage.click('section [type="submit"]');
 
     // ProfileForm renders a green "Wedi ei gadw! / Saved!" banner on success
     await expect(

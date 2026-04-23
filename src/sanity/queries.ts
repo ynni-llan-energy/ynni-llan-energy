@@ -45,6 +45,25 @@ export interface ProjectSummary {
   capacityKw: number | null;
 }
 
+export interface VolunteerRoleSummary {
+  _id: string;
+  title_cy: string;
+  title_en: string;
+  slug: { current: string };
+  status: "active" | "filled" | "closed";
+  summary_cy: string;
+  summary_en: string;
+  timeCommitment_cy: string | null;
+  timeCommitment_en: string | null;
+  skills: string[] | null;
+}
+
+export interface VolunteerRole extends VolunteerRoleSummary {
+  body_cy: unknown[];
+  body_en: unknown[] | null;
+  coverImage: SanityImageAsset | null;
+}
+
 export interface Principle {
   _key: string;
   cy: string;
@@ -164,6 +183,46 @@ export async function getProject(slug: string, client: SanityClient = sanityClie
       capacityKw,
       location,
       startDate
+    }`,
+    { slug },
+    isDraft ? draftFetchOptions : fetchOptions(60)
+  );
+}
+
+const volunteerRoleSummaryFragment = groq`
+  _id,
+  title_cy,
+  title_en,
+  slug,
+  status,
+  summary_cy,
+  summary_en,
+  timeCommitment_cy,
+  timeCommitment_en,
+  skills
+`;
+
+export async function getVolunteerRoles(client: SanityClient = sanityClient): Promise<VolunteerRoleSummary[]> {
+  if (!isSanityConfigured) return [];
+  const isDraft = client !== sanityClient;
+  return client.fetch(
+    groq`*[_type == "volunteerRole" && status == "active"] | order(_createdAt asc) {
+      ${volunteerRoleSummaryFragment}
+    }`,
+    {},
+    isDraft ? draftFetchOptions : fetchOptions(60)
+  );
+}
+
+export async function getVolunteerRole(slug: string, client: SanityClient = sanityClient): Promise<VolunteerRole | null> {
+  if (!isSanityConfigured) return null;
+  const isDraft = client !== sanityClient;
+  return client.fetch(
+    groq`*[_type == "volunteerRole" && slug.current == $slug][0] {
+      ${volunteerRoleSummaryFragment},
+      body_cy,
+      body_en,
+      coverImage { ..., asset-> }
     }`,
     { slug },
     isDraft ? draftFetchOptions : fetchOptions(60)

@@ -1,5 +1,6 @@
-export type MemberStatus = "pending" | "active" | "suspended";
+export type MemberStatus = "pending" | "active" | "suspended" | "expired";
 export type BallotStatus = "draft" | "open" | "closed";
+export type RoleStatus = "active" | "filled" | "closed";
 
 export interface Database {
   public: {
@@ -11,32 +12,41 @@ export interface Database {
           email: string;
           full_name: string | null;
           status: MemberStatus;
+          is_admin: boolean;
           eligible_to_vote: boolean;
           postcode: string | null;
           joined_at: string | null;
           approved_at: string | null;
           approved_by: string | null;
+          membership_expires_at: string | null;
+          renewal_notified_at: string | null;
         };
         Insert: {
           id?: string;
           email: string;
           full_name?: string | null;
           status?: MemberStatus;
+          is_admin?: boolean;
           eligible_to_vote?: boolean;
           postcode?: string | null;
           joined_at?: string | null;
           approved_at?: string | null;
           approved_by?: string | null;
+          membership_expires_at?: string | null;
+          renewal_notified_at?: string | null;
         };
         Update: {
           email?: string;
           full_name?: string | null;
           status?: MemberStatus;
+          is_admin?: boolean;
           eligible_to_vote?: boolean;
           postcode?: string | null;
           joined_at?: string | null;
           approved_at?: string | null;
           approved_by?: string | null;
+          membership_expires_at?: string | null;
+          renewal_notified_at?: string | null;
         };
         Relationships: [];
       };
@@ -139,6 +149,27 @@ export interface Database {
           sent_at?: string;
         };
         Update: never;
+        Relationships: [];
+      };
+      role_interest: {
+        Row: {
+          id: string;
+          created_at: string;
+          role_slug: string;
+          role_title: string;
+          member_id: string;
+          statement: string | null;
+        };
+        Insert: {
+          id?: string;
+          role_slug: string;
+          role_title: string;
+          member_id: string;
+          statement?: string | null;
+        };
+        Update: {
+          statement?: string | null;
+        };
         Relationships: [];
       };
     };

@@ -4,6 +4,7 @@ describe("SignUpSchema", () => {
   const valid = {
     full_name: "Siân Jones",
     email: "sian@example.com",
+    policy_consent: true,
   };
 
   it("accepts valid signup data", () => {

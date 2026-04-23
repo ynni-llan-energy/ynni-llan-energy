@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { signUp } from "@/app/actions/auth";
 import type { AuthFormState } from "@/lib/auth/schemas";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,43 @@ export function SignupForm() {
           placeholder="chi@enghraifft.com"
         />
         <FieldError messages={state?.errors?.email} />
+      </div>
+
+      <div>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            id="policy_consent"
+            name="policy_consent"
+            type="checkbox"
+            required
+            className="mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-[#0A4B68]/30 text-[#0A4B68] accent-[#0A4B68] focus:ring-2 focus:ring-[#0A4B68]/30 focus:ring-offset-0"
+          />
+          <span className="text-sm text-[#0A4B68]/80 leading-snug">
+            <span lang="cy">
+              Rwyf wedi darllen ac yn cytuno i&rsquo;r{" "}
+              <Link href="/aelodaeth" target="_blank" className="underline hover:text-[#0A4B68] transition-colors">
+                Polisi Aelodaeth
+              </Link>{" "}
+              a&rsquo;r{" "}
+              <Link href="/preifatrwydd" target="_blank" className="underline hover:text-[#0A4B68] transition-colors">
+                Polisi Preifatrwydd
+              </Link>
+              .
+            </span>{" "}
+            <span lang="en" className="italic opacity-60 text-xs">
+              I have read and agree to the{" "}
+              <Link href="/aelodaeth" target="_blank" className="underline hover:opacity-100 transition-opacity">
+                Membership Policy
+              </Link>{" "}
+              and{" "}
+              <Link href="/preifatrwydd" target="_blank" className="underline hover:opacity-100 transition-opacity">
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </span>
+        </label>
+        <FieldError messages={state?.errors?.policy_consent} />
       </div>
 
       <Button type="submit" disabled={pending} className="w-full" size="md">

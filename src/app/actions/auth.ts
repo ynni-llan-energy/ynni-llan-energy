@@ -30,6 +30,7 @@ export async function signUp(
   const parsed = SignUpSchema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),
+    policy_consent: formData.get("policy_consent") === "on",
   });
 
   if (!parsed.success) {
@@ -37,6 +38,7 @@ export async function signUp(
   }
 
   const { full_name, email } = parsed.data;
+  const policy_consent_at = new Date().toISOString();
   const supabase = await createClient();
 
   const emailRedirectTo = `${getSiteUrl()}/auth/callback`;
@@ -44,7 +46,7 @@ export async function signUp(
     email,
     options: {
       shouldCreateUser: true,
-      data: { full_name },
+      data: { full_name, policy_consent_at },
       emailRedirectTo,
     },
   });

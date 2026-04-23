@@ -45,6 +45,7 @@ test.describe("Signup page", () => {
 
     await page.fill("#full_name", `Signup Test ${suffix}`);
     await page.fill("#email", email);
+    await page.check("#policy_consent");
     await page.click('form [type="submit"]');
 
     await page.waitForURL("**/ymuno/diolch", { timeout: 15_000 });

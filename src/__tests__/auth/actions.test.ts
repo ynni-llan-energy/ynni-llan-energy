@@ -82,6 +82,7 @@ describe("signUp", () => {
   const validData = {
     full_name: "Siân Jones",
     email: "sian@example.com",
+    policy_consent: "on",
   };
 
   it("returns field errors for invalid input", async () => {
@@ -102,7 +103,7 @@ describe("signUp", () => {
         email: "sian@example.com",
         options: expect.objectContaining({
           shouldCreateUser: true,
-          data: { full_name: "Siân Jones" },
+          data: expect.objectContaining({ full_name: "Siân Jones", policy_consent_at: expect.any(String) }),
         }),
       })
     );

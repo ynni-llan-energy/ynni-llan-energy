@@ -6,8 +6,8 @@ import { flag } from "flags/next";
  * true  → site is open (normal operation)
  * false → WIP redirect is active
  *
- * Resolved from VERCEL_ENV so preview deployments see the full site
- * automatically. Override per-session via the Vercel Toolbar (FLAGS_SECRET).
+ * Controlled via the Vercel Flags dashboard. Override per-session via the
+ * Vercel Toolbar (requires FLAGS_SECRET env var).
  */
 export const wholeSiteFlag = flag<boolean>({
   key: "whole-site",
@@ -18,7 +18,4 @@ export const wholeSiteFlag = flag<boolean>({
     { label: "Off (coming soon)", value: false },
     { label: "On (full site)", value: true },
   ],
-  decide() {
-    return process.env.VERCEL_ENV !== "production";
-  },
 });

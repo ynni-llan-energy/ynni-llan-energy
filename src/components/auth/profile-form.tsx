@@ -45,17 +45,28 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
     undefined
   );
 
+  // Track whether the current success has been acknowledged (banner auto-hidden).
+  // This lets us reset after 4s without relying solely on local `saved` state.
+  const [acknowledgedSuccess, setAcknowledgedSuccess] = useState(false);
+
+  // Derive success immediately from action state so the banner is visible in
+  // the same render that the action completes — no useEffect delay needed.
+  const actionSucceeded = state?.message === "success" && !acknowledgedSuccess;
+
   useEffect(() => {
-    if (state?.message === "success") {
+    if (state?.message === "success" && !acknowledgedSuccess) {
       if (pendingValuesRef.current) {
         setDisplayValues(pendingValuesRef.current);
       }
       setSaved(true);
       setEditing(false);
-      const timer = setTimeout(() => setSaved(false), 4_000);
+      const timer = setTimeout(() => {
+        setSaved(false);
+        setAcknowledgedSuccess(true);
+      }, 4_000);
       return () => clearTimeout(timer);
     }
-  }, [state?.message]);
+  }, [state?.message, acknowledgedSuccess]);
 
   return (
     <section
@@ -81,7 +92,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
         {!editing && (
           <button
             type="button"
-            onClick={() => { setEditing(true); setSaved(false); }}
+            onClick={() => { setEditing(true); setSaved(false); setAcknowledgedSuccess(false); }}
             className="flex items-center gap-1.5 text-sm text-[#0A4B68]/60 hover:text-[#0A4B68] transition-colors"
             aria-label="Golygu manylion / Edit details"
           >
@@ -93,7 +104,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       </div>
 
       {/* ── Saved confirmation ───────────────────────────────────── */}
-      {saved && (
+      {(saved || actionSucceeded) && (
         <div
           className="mx-6 mt-4 p-3 rounded-sm bg-green-50 border border-green-200 text-sm text-green-700"
           role="status"
@@ -104,7 +115,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       )}
 
       {/* ── View mode ────────────────────────────────────────────── */}
-      {!editing && (
+      {(!editing || actionSucceeded) && (
         <div className="px-6 py-5 space-y-5">
           <Field
             labelCy="Enw llawn"
@@ -123,7 +134,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       )}
 
       {/* ── Edit mode ────────────────────────────────────────────── */}
-      {editing && (
+      {editing && !actionSucceeded && (
         <form
           action={formAction}
           onSubmit={(e) => {

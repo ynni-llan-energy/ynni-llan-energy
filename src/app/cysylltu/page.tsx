@@ -40,10 +40,10 @@ export default async function ContactPage() {
 
           <div className="flex flex-col gap-8">
             <div>
-              <p lang="cy" className="text-lg text-[#0A4B68]/80 leading-relaxed">
+              <p lang="cy" className="lang-only-cy text-lg text-[#0A4B68]/80 leading-relaxed">
                 {introCy}
               </p>
-              <p lang="en" className="text-sm italic text-[#0A4B68]/50 mt-2 pl-3 border-l border-[#C07E00]/40 leading-relaxed">
+              <p lang="en" className="lang-only-en text-lg text-[#0A4B68]/80 leading-relaxed">
                 {introEn}
               </p>
             </div>

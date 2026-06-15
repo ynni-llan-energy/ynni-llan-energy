@@ -48,7 +48,11 @@ export default async function NewsPostPage({ params }: Props) {
             <a href="/newyddion" className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors inline-block">
               ← <span lang="cy">Newyddion</span> <span lang="en" className="italic opacity-60">/ News</span>
             </a>
-            {post.body_en && post.body_en.length > 0 && <ScrollToEnglish />}
+            {post.body_en && post.body_en.length > 0 && (
+              <span className="lang-only-cy">
+                <ScrollToEnglish />
+              </span>
+            )}
           </div>
           <header className="mb-10">
             <time dateTime={post.publishedAt} className="text-xs text-[#C07E00] font-medium tracking-wide block mb-4">
@@ -59,23 +63,31 @@ export default async function NewsPostPage({ params }: Props) {
             {post.author && (
               <p className="mt-4 text-sm text-[#0A4B68]/60">
                 <span lang="cy">{post.author.name}</span>
-                {post.author.role_cy && <span className="ml-2 opacity-60">— {post.author.role_cy}</span>}
+                {post.author.role_cy && <span className="lang-only-cy ml-2 opacity-60">— {post.author.role_cy}</span>}
+                {post.author.role_en && <span className="lang-only-en ml-2 opacity-60">— {post.author.role_en}</span>}
               </p>
             )}
           </header>
           {post.body_cy && post.body_cy.length > 0 && (
-            <div lang="cy" className="text-[#0A4B68]/80 mb-10">
+            <div lang="cy" className="lang-only-cy text-[#0A4B68]/80 mb-10">
               <PortableText value={post.body_cy as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
             </div>
           )}
           {post.body_en && post.body_en.length > 0 && (
-            <div id="en" lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
-              <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
-              <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-6">{post.title_en}</h2>
-              <div className="italic text-[#0A4B68]/60">
+            <>
+              {/* English body inline — English mode */}
+              <div lang="en" className="lang-only-en text-[#0A4B68]/80 mb-10">
                 <PortableText value={post.body_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
               </div>
-            </div>
+              {/* English body as bilingual section at the bottom — Welsh mode */}
+              <div id="en" lang="en" className="lang-only-cy border-t border-[#0A4B68]/10 pt-8 mt-8">
+                <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
+                <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-6">{post.title_en}</h2>
+                <div className="italic text-[#0A4B68]/60">
+                  <PortableText value={post.body_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
+                </div>
+              </div>
+            </>
           )}
         </article>
       </main>

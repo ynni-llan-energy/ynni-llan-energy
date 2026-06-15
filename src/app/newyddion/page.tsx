@@ -43,7 +43,8 @@ export default async function NewsIndexPage() {
                   </time>
                   <h2 lang="cy" className="font-display font-semibold text-[#0A4B68] group-hover:text-[#C07E00] transition-colors leading-snug">{post.title_cy}</h2>
                   {post.title_en && <p lang="en" className="text-sm italic text-[#0A4B68]/50">{post.title_en}</p>}
-                  {post.excerpt_cy && <p lang="cy" className="text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{post.excerpt_cy}</p>}
+                  {post.excerpt_cy && <p lang="cy" className="lang-only-cy text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{post.excerpt_cy}</p>}
+                  {post.excerpt_en && <p lang="en" className="lang-only-en text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{post.excerpt_en}</p>}
                 </Link>
               ))}
             </div>

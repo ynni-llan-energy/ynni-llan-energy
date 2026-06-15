@@ -49,14 +49,14 @@ export function Hero({
             </div>
 
             {(body_cy || body_en) && (
-              <div className="flex flex-col gap-3 max-w-lg">
+              <div className="max-w-lg">
                 {body_cy && (
-                  <p lang="cy" className="text-lg text-[#0A4B68]/80 leading-relaxed">
+                  <p lang="cy" className="lang-only-cy text-lg text-[#0A4B68]/80 leading-relaxed">
                     {body_cy}
                   </p>
                 )}
                 {body_en && (
-                  <p lang="en" className="text-sm italic text-[#0A4B68]/50 pl-3 border-l border-[#C07E00]/40 leading-relaxed">
+                  <p lang="en" className="lang-only-en text-lg text-[#0A4B68]/80 leading-relaxed">
                     {body_en}
                   </p>
                 )}

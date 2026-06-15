@@ -66,7 +66,11 @@ export default async function VolunteerRolePage({ params }: Props) {
               ← <span lang="cy">Cyfrannu</span>{" "}
               <span lang="en" className="italic opacity-60">/ Volunteer</span>
             </a>
-            {role.body_en && role.body_en.length > 0 && <ScrollToEnglish />}
+            {role.body_en && role.body_en.length > 0 && (
+              <span className="lang-only-cy">
+                <ScrollToEnglish />
+              </span>
+            )}
           </div>
 
           <header className="mb-10">
@@ -90,8 +94,13 @@ export default async function VolunteerRolePage({ params }: Props) {
             </p>
 
             {role.summary_cy && (
-              <p lang="cy" className="mt-6 text-lg text-[#0A4B68]/80 leading-relaxed">
+              <p lang="cy" className="lang-only-cy mt-6 text-lg text-[#0A4B68]/80 leading-relaxed">
                 {role.summary_cy}
+              </p>
+            )}
+            {role.summary_en && (
+              <p lang="en" className="lang-only-en mt-6 text-lg text-[#0A4B68]/80 leading-relaxed">
+                {role.summary_en}
               </p>
             )}
           </header>
@@ -122,10 +131,10 @@ export default async function VolunteerRolePage({ params }: Props) {
                 <span lang="en" className="italic">/ Time commitment</span>
               </span>
               {role.timeCommitment_cy && (
-                <p lang="cy" className="text-sm text-[#0A4B68]">{role.timeCommitment_cy}</p>
+                <p lang="cy" className="lang-only-cy text-sm text-[#0A4B68]">{role.timeCommitment_cy}</p>
               )}
               {role.timeCommitment_en && (
-                <p lang="en" className="text-xs italic text-[#0A4B68]/60">{role.timeCommitment_en}</p>
+                <p lang="en" className="lang-only-en text-sm text-[#0A4B68]">{role.timeCommitment_en}</p>
               )}
             </div>
           )}
@@ -134,22 +143,31 @@ export default async function VolunteerRolePage({ params }: Props) {
           {role.body_cy && role.body_cy.length > 0 && (
             <div
               lang="cy"
-              className="prose prose-slate max-w-none mb-10 [&>p]:text-[#0A4B68]/80 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68] [&>ul]:text-[#0A4B68]/80 [&>ol]:text-[#0A4B68]/80"
+              className="lang-only-cy prose prose-slate max-w-none mb-10 [&>p]:text-[#0A4B68]/80 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68] [&>ul]:text-[#0A4B68]/80 [&>ol]:text-[#0A4B68]/80"
             >
               <PortableText value={role.body_cy as Parameters<typeof PortableText>[0]["value"]} />
             </div>
           )}
 
-          {/* English full description */}
           {role.body_en && role.body_en.length > 0 && (
-            <div id="en" lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
-              <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
-              <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-3">{role.title_en}</h2>
-              {role.summary_en && <p lang="en" className="text-lg text-[#0A4B68]/80 leading-relaxed mb-6">{role.summary_en}</p>}
-              <div className="prose prose-slate max-w-none italic [&>p]:text-[#0A4B68]/60 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68]">
+            <>
+              {/* English body inline — English mode */}
+              <div
+                lang="en"
+                className="lang-only-en prose prose-slate max-w-none mb-10 [&>p]:text-[#0A4B68]/80 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68] [&>ul]:text-[#0A4B68]/80 [&>ol]:text-[#0A4B68]/80"
+              >
                 <PortableText value={role.body_en as Parameters<typeof PortableText>[0]["value"]} />
               </div>
-            </div>
+              {/* English body as bilingual section at the bottom — Welsh mode */}
+              <div id="en" lang="en" className="lang-only-cy border-t border-[#0A4B68]/10 pt-8 mt-8">
+                <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
+                <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-3">{role.title_en}</h2>
+                {role.summary_en && <p lang="en" className="text-lg text-[#0A4B68]/80 leading-relaxed mb-6">{role.summary_en}</p>}
+                <div className="prose prose-slate max-w-none italic [&>p]:text-[#0A4B68]/60 [&>h2]:font-display [&>h2]:text-[#0A4B68] [&>h3]:font-display [&>h3]:text-[#0A4B68]">
+                  <PortableText value={role.body_en as Parameters<typeof PortableText>[0]["value"]} />
+                </div>
+              </div>
+            </>
           )}
 
           {/* PDF download */}

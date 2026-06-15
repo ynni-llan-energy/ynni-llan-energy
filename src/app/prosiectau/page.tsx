@@ -69,8 +69,13 @@ export default async function ProjectsIndexPage() {
                     </div>
 
                     {project.summary_cy && (
-                      <p lang="cy" className="text-sm text-[#0A4B68]/70 leading-relaxed">
+                      <p lang="cy" className="lang-only-cy text-sm text-[#0A4B68]/70 leading-relaxed">
                         {project.summary_cy}
+                      </p>
+                    )}
+                    {project.summary_en && (
+                      <p lang="en" className="lang-only-en text-sm text-[#0A4B68]/70 leading-relaxed">
+                        {project.summary_en}
                       </p>
                     )}
                   </Link>

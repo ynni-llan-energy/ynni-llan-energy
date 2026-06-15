@@ -89,8 +89,7 @@ export function AdminWeeklyDigestEmail({
     <Html lang="cy">
       <Head />
       <Preview>
-        Crynodeb aelodaeth wythnosol {weekStart}–{weekEnd} —{" "}
-        {newMembersCount} newydd, {pendingCount} yn aros am gymeradwyaeth
+        {`Crynodeb aelodaeth wythnosol ${weekStart}–${weekEnd} — ${newMembersCount} newydd, ${pendingCount} yn aros am gymeradwyaeth`}
       </Preview>
 
       <Body style={s.body}>

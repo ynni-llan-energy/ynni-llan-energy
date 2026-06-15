@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect, useRef } from "react";
 import { updateProfile } from "@/app/actions/auth";
 import type { AuthFormState } from "@/lib/auth/schemas";
 
@@ -34,23 +34,28 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
     postcode: defaultValues.postcode,
   });
 
-  const [state, action, pending] = useActionState<AuthFormState, FormData>(
-    async (prev, formData) => {
-      const result = await updateProfile(prev, formData);
-      if (result?.message === "success") {
-        // Capture the new values to show in view mode
-        setDisplayValues({
-          full_name: (formData.get("full_name") as string) || null,
-          postcode: (formData.get("postcode") as string) || null,
-        });
-        setSaved(true);
-        setEditing(false);
-        setTimeout(() => setSaved(false), 4000);
-      }
-      return result;
-    },
+  // Capture form values on submit so we can update displayValues optimistically
+  // after the server action completes (useActionState doesn't expose formData).
+  const pendingValuesRef = useRef<{ full_name: string | null; postcode: string | null } | null>(null);
+
+  // Pass updateProfile directly — not wrapped — so Next.js forwards session
+  // cookies correctly through the Server Actions protocol.
+  const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
+    updateProfile,
     undefined
   );
+
+  useEffect(() => {
+    if (state?.message === "success") {
+      if (pendingValuesRef.current) {
+        setDisplayValues(pendingValuesRef.current);
+      }
+      setSaved(true);
+      setEditing(false);
+      const timer = setTimeout(() => setSaved(false), 4_000);
+      return () => clearTimeout(timer);
+    }
+  }, [state?.message]);
 
   return (
     <section
@@ -120,7 +125,14 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       {/* ── Edit mode ────────────────────────────────────────────── */}
       {editing && (
         <form
-          action={action}
+          action={formAction}
+          onSubmit={(e) => {
+            const fd = new FormData(e.currentTarget);
+            pendingValuesRef.current = {
+              full_name: (fd.get("full_name") as string) || null,
+              postcode: (fd.get("postcode") as string) || null,
+            };
+          }}
           className="px-6 py-5 space-y-5"
           noValidate
         >

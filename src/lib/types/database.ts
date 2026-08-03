@@ -140,7 +140,7 @@ export interface Database {
           template: string;
           subject: string;
           recipient_count: number;
-          triggered_by: string;
+          triggered_by: string | null;
           sent_at: string;
         };
         Insert: {
@@ -148,7 +148,7 @@ export interface Database {
           template: string;
           subject: string;
           recipient_count?: number;
-          triggered_by: string;
+          triggered_by?: string | null;
           sent_at?: string;
         };
         Update: never;

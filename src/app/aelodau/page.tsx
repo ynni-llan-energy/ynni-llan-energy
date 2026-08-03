@@ -217,7 +217,12 @@ export default async function MemberDashboard() {
                all managed inside ProfileForm itself */}
           <ProfileForm
             defaultValues={{
-              full_name: member?.full_name ?? null,
+              // Fall back to auth user_metadata when the members row has no
+              // full_name yet (e.g. race between admin API and INSERT trigger).
+              full_name:
+                member?.full_name ??
+                (user.user_metadata?.full_name as string | null) ??
+                null,
               postcode: member?.postcode ?? null,
             }}
           />

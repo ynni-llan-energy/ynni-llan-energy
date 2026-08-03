@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useTransition, useRef } from "react";
 import { updateProfile } from "@/app/actions/auth";
 import type { AuthFormState } from "@/lib/auth/schemas";
 
@@ -27,30 +27,34 @@ interface ProfileFormProps {
 export function ProfileForm({ defaultValues }: ProfileFormProps) {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
-  // Track optimistically-displayed values separately so view mode updates
-  // immediately on save without a page refresh.
   const [displayValues, setDisplayValues] = useState({
     full_name: defaultValues.full_name,
     postcode: defaultValues.postcode,
   });
+  const [formState, setFormState] = useState<AuthFormState>(undefined);
+  const pendingValuesRef = useRef<{ full_name: string | null; postcode: string | null } | null>(null);
+  const [pending, startTransition] = useTransition();
 
-  const [state, action, pending] = useActionState<AuthFormState, FormData>(
-    async (prev, formData) => {
-      const result = await updateProfile(prev, formData);
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    pendingValuesRef.current = {
+      full_name: (formData.get("full_name") as string) || null,
+      postcode: (formData.get("postcode") as string) || null,
+    };
+    startTransition(async () => {
+      const result = await updateProfile(undefined, formData);
+      setFormState(result);
       if (result?.message === "success") {
-        // Capture the new values to show in view mode
-        setDisplayValues({
-          full_name: (formData.get("full_name") as string) || null,
-          postcode: (formData.get("postcode") as string) || null,
-        });
+        if (pendingValuesRef.current) {
+          setDisplayValues(pendingValuesRef.current);
+        }
         setSaved(true);
         setEditing(false);
-        setTimeout(() => setSaved(false), 4000);
+        setTimeout(() => setSaved(false), 4_000);
       }
-      return result;
-    },
-    undefined
-  );
+    });
+  }
 
   return (
     <section
@@ -76,7 +80,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
         {!editing && (
           <button
             type="button"
-            onClick={() => { setEditing(true); setSaved(false); }}
+            onClick={() => { setEditing(true); setSaved(false); setFormState(undefined); }}
             className="flex items-center gap-1.5 text-sm text-[#0A4B68]/60 hover:text-[#0A4B68] transition-colors"
             aria-label="Golygu manylion / Edit details"
           >
@@ -120,16 +124,16 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       {/* ── Edit mode ────────────────────────────────────────────── */}
       {editing && (
         <form
-          action={action}
+          onSubmit={handleSubmit}
           className="px-6 py-5 space-y-5"
           noValidate
         >
-          {state?.message && state.message !== "success" && (
+          {formState?.message && formState.message !== "success" && (
             <div
               className="p-3 rounded-sm bg-red-50 border border-red-200 text-sm text-red-700"
               role="alert"
             >
-              {state.message}
+              {formState.message}
             </div>
           )}
 
@@ -151,7 +155,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
               autoFocus
               className="w-full px-3 py-2.5 rounded-sm border border-[#0A4B68]/20 bg-white text-[#0A4B68] text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4B68]/30 focus:border-[#0A4B68]"
             />
-            <FieldError messages={state?.errors?.full_name} />
+            <FieldError messages={formState?.errors?.full_name} />
           </div>
 
           <div>
@@ -172,7 +176,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
               className="w-full px-3 py-2.5 rounded-sm border border-[#0A4B68]/20 bg-white text-[#0A4B68] text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4B68]/30 focus:border-[#0A4B68] uppercase"
               placeholder="LL33"
             />
-            <FieldError messages={state?.errors?.postcode} />
+            <FieldError messages={formState?.errors?.postcode} />
           </div>
 
           <div className="flex items-center gap-3 pt-1">

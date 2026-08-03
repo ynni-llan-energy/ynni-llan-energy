@@ -113,7 +113,10 @@ jobs:
           # `supabase status` exits with code 1 when optional services (imgproxy,
           # pooler) are stopped. Capture output and suppress exit code — the
           # essential services are still running.
-          STATUS=$(supabase status 2>&1 || true)
+          # Strip ANSI colour escape codes — newer CLI versions colourize table
+          # labels even when piped, which inserts an escape sequence between
+          # e.g. "Project URL" and the │ separator and breaks the regexes below.
+          STATUS=$(supabase status 2>&1 | sed -E 's/\x1B\[[0-9;]*[a-zA-Z]//g' || true)
           echo "$STATUS"
 
           # The Supabase CLI output format changed in v2: box-drawing table with

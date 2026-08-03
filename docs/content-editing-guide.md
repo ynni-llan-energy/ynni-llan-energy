@@ -25,7 +25,7 @@ If you get stuck at any point, don't worry — nothing you do here can break the
 
 ## 1. Getting started
 
-1. Go to **`https://ynnicymunedolllanfairfechan.cymru/studio`** in your web browser (Chrome, Safari, Edge or Firefox all work fine).
+1. Go to **`https://ynni-llanfairfechan.uk/studio`** in your web browser (Chrome, Safari, Edge or Firefox all work fine).
 2. Log in with the email address you've been given access with. You may receive a one-time link or code by email — click it to sign in.
 3. You'll land on the **Content** screen. This is Sanity Studio, sometimes just called "the Studio."
 

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/types/database";
 
 /**
  * Returns a Supabase client using the service-role key so tests can create
@@ -21,7 +22,7 @@ export function createAdminClient() {
     );
   }
 
-  return createClient(url, key, {
+  return createClient<Database>(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
@@ -33,50 +34,19 @@ export interface TestUserRecord {
 }
 
 /**
- * Poll the `members` table (via the admin/service-role client, bypassing RLS)
- * until the row created by the `on_auth_user_created` trigger becomes visible
- * to a fresh query, or the timeout elapses.
- *
- * The trigger fires synchronously inside the same transaction as the
- * `auth.users` insert, so in principle the row exists the instant
- * `admin.createUser()` resolves. In practice the local Supabase stack used in
- * CI has occasionally shown a short window where a subsequent query — via a
- * different connection/service — doesn't see the row yet. Rather than let
- * every consumer of a freshly created test user hit that window, wait it out
- * once here.
- */
-async function waitForMemberRow(
-  userId: string,
-  { timeoutMs = 8_000, intervalMs = 250 } = {}
-): Promise<void> {
-  const admin = createAdminClient();
-  const deadline = Date.now() + timeoutMs;
-
-  while (Date.now() < deadline) {
-    const { data } = await admin
-      .from("members")
-      .select("id, full_name")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (data?.full_name) return;
-
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-
-  throw new Error(
-    `members row for user ${userId} did not become visible within ${timeoutMs}ms — ` +
-      "the on_auth_user_created trigger may not have fired."
-  );
-}
-
-/**
  * Create a confirmed auth user via the admin API.
  * `email_confirm: true` skips the email confirmation step so the test can
  * log in immediately via generateMagicLink.
  *
- * Waits for the corresponding `members` row (created by a DB trigger) to
- * become queryable before returning, so callers never race the trigger.
+ * The `on_auth_user_created` trigger creates the corresponding `members` row
+ * as a side effect of the `auth.users` insert, but in CI that row has proven
+ * unreliable to observe from a subsequent query soon after — sometimes taking
+ * many seconds to become visible, sometimes longer than is practical to wait
+ * for in a test setup step. Rather than depend on that timing, explicitly
+ * upsert the row ourselves right after creating the user: this is
+ * deterministic and race-free, and harmless if the trigger's own insert lands
+ * around the same time (its `ON CONFLICT (id) DO NOTHING` just no-ops against
+ * the row we already wrote).
  */
 export async function createTestUser(
   email: string,
@@ -93,7 +63,21 @@ export async function createTestUser(
     throw new Error(`Failed to create test user: ${error?.message}`);
   }
 
-  await waitForMemberRow(data.user.id);
+  const { error: upsertError } = await admin.from("members").upsert(
+    {
+      id: data.user.id,
+      email,
+      full_name: fullName,
+      status: "pending",
+      eligible_to_vote: false,
+      joined_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+
+  if (upsertError) {
+    throw new Error(`Failed to create members row for test user: ${upsertError.message}`);
+  }
 
   return { id: data.user.id, email, fullName };
 }

@@ -44,10 +44,11 @@ On the left-hand side you'll see a menu with these sections (each one is shown i
 | **Prosiectau / Projects** | The renewable energy projects you're running |
 | **Tudalennau / Pages** | Membership, Accessibility and Privacy pages |
 | **Pobl / People** | People (e.g. news authors, committee members) |
+| **Rolau Gwirfoddol / Volunteer Roles** | Volunteer roles people can apply for |
 
 Click any item to see a list of existing entries, or to open that section's editor.
 
-To find something quickly, click the **search icon** (magnifying glass) at the top of the screen and start typing — this searches everything, including content types that aren't in the left-hand menu, such as **Volunteer Roles**.
+To find something quickly, click the **search icon** (magnifying glass) at the top of the screen and start typing.
 
 ---
 
@@ -97,7 +98,8 @@ To find something quickly, click the **search icon** (magnifying glass) at the t
 
 ## 6. Adding or updating a Volunteer Role
 
-Volunteer roles don't currently have their own entry in the left-hand menu — use the **search icon** at the top of the screen, type "volunteer" or "gwirfoddol", or use the **+ (Create new)** button at the top and choose **Rolau Gwirfoddol / Volunteer Roles** from the list of types.
+1. In the left-hand menu, click **Rolau Gwirfoddol / Volunteer Roles**.
+2. Click **+ (Create new)** for a new role, or click an existing one to edit it.
 
 Fields to fill in:
 - **Teitl y rôl (Cymraeg) / Role title (English)**
@@ -179,9 +181,6 @@ Yes. Edit the document again with the correct content and click Publish again. S
 
 **Can I delete something by mistake?**
 You'd need to deliberately open the menu (⋮) on a document and choose Delete, then confirm — it won't happen by accident from normal editing.
-
-**Where do Volunteer Roles show up if they're not in the menu?**
-Use the search icon at the top of the Studio, or the **+ (Create new)** button and pick the type from the list — see [section 6](#6-adding-or-updating-a-volunteer-role).
 
 **Who do I contact if I'm stuck?**
 Contact whoever manages the website for Ynni Cymunedol Llanfairfechan — they can also grant Studio access to new editors.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState, useEffect, useRef } from "react";
+import { useState, useTransition, useRef } from "react";
 import { updateProfile } from "@/app/actions/auth";
 import type { AuthFormState } from "@/lib/auth/schemas";
 
@@ -27,46 +27,34 @@ interface ProfileFormProps {
 export function ProfileForm({ defaultValues }: ProfileFormProps) {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
-  // Track optimistically-displayed values separately so view mode updates
-  // immediately on save without a page refresh.
   const [displayValues, setDisplayValues] = useState({
     full_name: defaultValues.full_name,
     postcode: defaultValues.postcode,
   });
-
-  // Capture form values on submit so we can update displayValues optimistically
-  // after the server action completes (useActionState doesn't expose formData).
+  const [formState, setFormState] = useState<AuthFormState>(undefined);
   const pendingValuesRef = useRef<{ full_name: string | null; postcode: string | null } | null>(null);
+  const [pending, startTransition] = useTransition();
 
-  // Pass updateProfile directly — not wrapped — so Next.js forwards session
-  // cookies correctly through the Server Actions protocol.
-  const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
-    updateProfile,
-    undefined
-  );
-
-  // Track whether the current success has been acknowledged (banner auto-hidden).
-  // This lets us reset after 4s without relying solely on local `saved` state.
-  const [acknowledgedSuccess, setAcknowledgedSuccess] = useState(false);
-
-  // Derive success immediately from action state so the banner is visible in
-  // the same render that the action completes — no useEffect delay needed.
-  const actionSucceeded = state?.message === "success" && !acknowledgedSuccess;
-
-  useEffect(() => {
-    if (state?.message === "success" && !acknowledgedSuccess) {
-      if (pendingValuesRef.current) {
-        setDisplayValues(pendingValuesRef.current);
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    pendingValuesRef.current = {
+      full_name: (formData.get("full_name") as string) || null,
+      postcode: (formData.get("postcode") as string) || null,
+    };
+    startTransition(async () => {
+      const result = await updateProfile(undefined, formData);
+      setFormState(result);
+      if (result?.message === "success") {
+        if (pendingValuesRef.current) {
+          setDisplayValues(pendingValuesRef.current);
+        }
+        setSaved(true);
+        setEditing(false);
+        setTimeout(() => setSaved(false), 4_000);
       }
-      setSaved(true);
-      setEditing(false);
-      const timer = setTimeout(() => {
-        setSaved(false);
-        setAcknowledgedSuccess(true);
-      }, 4_000);
-      return () => clearTimeout(timer);
-    }
-  }, [state?.message, acknowledgedSuccess]);
+    });
+  }
 
   return (
     <section
@@ -92,7 +80,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
         {!editing && (
           <button
             type="button"
-            onClick={() => { setEditing(true); setSaved(false); setAcknowledgedSuccess(false); }}
+            onClick={() => { setEditing(true); setSaved(false); setFormState(undefined); }}
             className="flex items-center gap-1.5 text-sm text-[#0A4B68]/60 hover:text-[#0A4B68] transition-colors"
             aria-label="Golygu manylion / Edit details"
           >
@@ -104,7 +92,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       </div>
 
       {/* ── Saved confirmation ───────────────────────────────────── */}
-      {(saved || actionSucceeded) && (
+      {saved && (
         <div
           className="mx-6 mt-4 p-3 rounded-sm bg-green-50 border border-green-200 text-sm text-green-700"
           role="status"
@@ -115,7 +103,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       )}
 
       {/* ── View mode ────────────────────────────────────────────── */}
-      {(!editing || actionSucceeded) && (
+      {!editing && (
         <div className="px-6 py-5 space-y-5">
           <Field
             labelCy="Enw llawn"
@@ -134,25 +122,18 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       )}
 
       {/* ── Edit mode ────────────────────────────────────────────── */}
-      {editing && !actionSucceeded && (
+      {editing && (
         <form
-          action={formAction}
-          onSubmit={(e) => {
-            const fd = new FormData(e.currentTarget);
-            pendingValuesRef.current = {
-              full_name: (fd.get("full_name") as string) || null,
-              postcode: (fd.get("postcode") as string) || null,
-            };
-          }}
+          onSubmit={handleSubmit}
           className="px-6 py-5 space-y-5"
           noValidate
         >
-          {state?.message && state.message !== "success" && (
+          {formState?.message && formState.message !== "success" && (
             <div
               className="p-3 rounded-sm bg-red-50 border border-red-200 text-sm text-red-700"
               role="alert"
             >
-              {state.message}
+              {formState.message}
             </div>
           )}
 
@@ -174,7 +155,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
               autoFocus
               className="w-full px-3 py-2.5 rounded-sm border border-[#0A4B68]/20 bg-white text-[#0A4B68] text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4B68]/30 focus:border-[#0A4B68]"
             />
-            <FieldError messages={state?.errors?.full_name} />
+            <FieldError messages={formState?.errors?.full_name} />
           </div>
 
           <div>
@@ -195,7 +176,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
               className="w-full px-3 py-2.5 rounded-sm border border-[#0A4B68]/20 bg-white text-[#0A4B68] text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4B68]/30 focus:border-[#0A4B68] uppercase"
               placeholder="LL33"
             />
-            <FieldError messages={state?.errors?.postcode} />
+            <FieldError messages={formState?.errors?.postcode} />
           </div>
 
           <div className="flex items-center gap-3 pt-1">

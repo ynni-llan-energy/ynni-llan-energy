@@ -92,7 +92,8 @@ export default async function HomePage() {
                       {post.title_cy}
                     </h3>
                     {post.title_en && <p lang="en" className="text-sm italic text-[#0A4B68]/50">{post.title_en}</p>}
-                    {post.excerpt_cy && <p lang="cy" className="text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{post.excerpt_cy}</p>}
+                    {post.excerpt_cy && <p lang="cy" className="lang-only-cy text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{post.excerpt_cy}</p>}
+                    {post.excerpt_en && <p lang="en" className="lang-only-en text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{post.excerpt_en}</p>}
                   </Link>
                 ))}
               </div>
@@ -128,7 +129,8 @@ export default async function HomePage() {
                     <span className="text-xs font-medium text-[#2B8050] uppercase tracking-wide">{project.status.replace("_", " ")}</span>
                     <h3 lang="cy" className="font-display font-semibold text-[#0A4B68] group-hover:text-[#C07E00] transition-colors leading-snug">{project.title_cy}</h3>
                     {project.title_en && <p lang="en" className="text-sm italic text-[#0A4B68]/50">{project.title_en}</p>}
-                    {project.summary_cy && <p lang="cy" className="text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{project.summary_cy}</p>}
+                    {project.summary_cy && <p lang="cy" className="lang-only-cy text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{project.summary_cy}</p>}
+                    {project.summary_en && <p lang="en" className="lang-only-en text-sm text-[#0A4B68]/70 leading-relaxed line-clamp-3">{project.summary_en}</p>}
                     {project.capacityKw && <p className="text-xs text-[#C07E00] font-medium mt-auto pt-2">{project.capacityKw} kW</p>}
                   </Link>
                 ))}

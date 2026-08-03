@@ -26,12 +26,12 @@ export default async function VolunteerIndexPage() {
             <p lang="en" className="italic text-[#0A4B68]/60 mt-2 pl-4 border-l-2 border-[#C07E00]">
               Volunteer with us
             </p>
-            <p className="mt-6 text-base text-[#0A4B68]/80 max-w-2xl leading-relaxed" lang="cy">
+            <p className="mt-6 text-base text-[#0A4B68]/80 max-w-2xl leading-relaxed lang-only-cy" lang="cy">
               Fel grŵp cymunedol gwirfoddol, rydym yn dibynnu ar gefnogaeth aelodau&apos;r gymuned.
               Dyma&apos;r rolau rydym yn ceisio eu llenwi ar hyn o bryd — os oes gennych ddiddordeb,
               cysylltwch â ni.
             </p>
-            <p className="mt-2 text-sm italic text-[#0A4B68]/50 max-w-2xl leading-relaxed" lang="en">
+            <p className="mt-6 text-base text-[#0A4B68]/80 max-w-2xl leading-relaxed lang-only-en" lang="en">
               As a volunteer-based community group, we rely on the support of community members.
               These are the roles we are currently looking to fill — if you&apos;re interested,
               please get in touch.
@@ -74,8 +74,13 @@ export default async function VolunteerIndexPage() {
                   </div>
 
                   {role.summary_cy && (
-                    <p lang="cy" className="text-sm text-[#0A4B68]/70 leading-relaxed">
+                    <p lang="cy" className="lang-only-cy text-sm text-[#0A4B68]/70 leading-relaxed">
                       {role.summary_cy}
+                    </p>
+                  )}
+                  {role.summary_en && (
+                    <p lang="en" className="lang-only-en text-sm text-[#0A4B68]/70 leading-relaxed">
+                      {role.summary_en}
                     </p>
                   )}
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MobileMenu } from "./mobile-menu";
+import { LanguageToggle } from "@/components/ui/language-toggle";
 
 const navLinks = [
   { href: "/am-ni", cy: "Amdanom Ni", en: "About" },
@@ -64,6 +65,9 @@ export async function Header() {
                 </span>
               </Link>
             ))}
+
+            {/* Language toggle */}
+            <LanguageToggle />
 
             {/* Auth CTA — grouped visually, separated from nav links */}
             <div className="flex items-center gap-2 ml-2 pl-4 border-l border-[#0A4B68]/15">

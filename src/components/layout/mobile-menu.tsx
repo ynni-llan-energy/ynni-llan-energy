@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LanguageToggle } from "@/components/ui/language-toggle";
 
 interface NavLink {
   href: string;
@@ -20,6 +21,11 @@ export function MobileMenu({ navLinks, isLoggedIn }: MobileMenuProps) {
 
   return (
     <>
+      {/* Language toggle — always visible on mobile */}
+      <div className="md:hidden">
+        <LanguageToggle />
+      </div>
+
       {/* Hamburger button */}
       <button
         type="button"

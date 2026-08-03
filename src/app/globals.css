@@ -42,3 +42,19 @@ body {
   color: theme(--color-sea-navy);
   opacity: 0.75;
 }
+
+/*
+ * Language visibility utilities.
+ * .lang-only-cy  — visible in Welsh mode (default), hidden in English mode
+ * .lang-only-en  — visible in English mode only
+ *
+ * Default (no data-lang or data-lang="cy") = Welsh mode.
+ * Short bilingual elements (nav, headings, labels) do NOT use these classes
+ * and remain visible in both modes.
+ */
+html:not([data-lang="en"]) .lang-only-en {
+  display: none;
+}
+html[data-lang="en"] .lang-only-cy {
+  display: none;
+}

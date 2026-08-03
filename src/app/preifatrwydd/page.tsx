@@ -37,14 +37,11 @@ export default async function PrivacyPage() {
 
           {page?.body_cy ? (
             <div className="flex flex-col gap-8">
-              <div lang="cy" className="prose prose-slate max-w-none text-[#0A4B68]/80 leading-relaxed">
+              <div lang="cy" className="lang-only-cy prose prose-slate max-w-none text-[#0A4B68]/80 leading-relaxed">
                 <PortableText value={page.body_cy as Parameters<typeof PortableText>[0]["value"]} />
               </div>
               {page.body_en && (
-                <div
-                  lang="en"
-                  className="prose prose-slate max-w-none text-sm italic text-[#0A4B68]/50 pl-4 border-l-2 border-[#C07E00]/40 leading-relaxed"
-                >
+                <div lang="en" className="lang-only-en prose prose-slate max-w-none text-[#0A4B68]/80 leading-relaxed">
                   <PortableText value={page.body_en as Parameters<typeof PortableText>[0]["value"]} />
                 </div>
               )}

@@ -48,7 +48,11 @@ export default async function ProjectPage({ params }: Props) {
             <a href="/prosiectau" className="text-sm text-[#C07E00] hover:text-[#0A4B68] underline underline-offset-2 transition-colors inline-block">
               ← <span lang="cy">Prosiectau</span> <span lang="en" className="italic opacity-60">/ Projects</span>
             </a>
-            {project.body_en && project.body_en.length > 0 && <ScrollToEnglish />}
+            {project.body_en && project.body_en.length > 0 && (
+              <span className="lang-only-cy">
+                <ScrollToEnglish />
+              </span>
+            )}
           </div>
           <header className="mb-10">
             <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -58,22 +62,30 @@ export default async function ProjectPage({ params }: Props) {
             </div>
             <h1 lang="cy" className="font-display text-4xl sm:text-5xl font-bold text-[#0A4B68] leading-tight mb-3">{project.title_cy}</h1>
             <p lang="en" className="text-xl italic text-[#0A4B68]/60 pl-4 border-l-2 border-[#C07E00]">{project.title_en}</p>
-            {project.summary_cy && <p lang="cy" className="mt-6 text-lg text-[#0A4B68]/80 leading-relaxed">{project.summary_cy}</p>}
+            {project.summary_cy && <p lang="cy" className="lang-only-cy mt-6 text-lg text-[#0A4B68]/80 leading-relaxed">{project.summary_cy}</p>}
+            {project.summary_en && <p lang="en" className="lang-only-en mt-6 text-lg text-[#0A4B68]/80 leading-relaxed">{project.summary_en}</p>}
           </header>
           {project.body_cy && project.body_cy.length > 0 && (
-            <div lang="cy" className="text-[#0A4B68]/80 mb-10">
+            <div lang="cy" className="lang-only-cy text-[#0A4B68]/80 mb-10">
               <PortableText value={project.body_cy as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
             </div>
           )}
           {project.body_en && project.body_en.length > 0 && (
-            <div id="en" lang="en" className="border-t border-[#0A4B68]/10 pt-8 mt-8">
-              <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
-              <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-3">{project.title_en}</h2>
-              {project.summary_en && <p lang="en" className="text-lg text-[#0A4B68]/80 leading-relaxed mb-6">{project.summary_en}</p>}
-              <div className="italic text-[#0A4B68]/60">
+            <>
+              {/* English body inline — English mode */}
+              <div lang="en" className="lang-only-en text-[#0A4B68]/80 mb-10">
                 <PortableText value={project.body_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
               </div>
-            </div>
+              {/* English body as bilingual section at the bottom — Welsh mode */}
+              <div id="en" lang="en" className="lang-only-cy border-t border-[#0A4B68]/10 pt-8 mt-8">
+                <p className="text-xs uppercase tracking-widest text-[#C07E00] mb-4 font-medium">English</p>
+                <h2 lang="en" className="font-display text-2xl sm:text-3xl font-bold text-[#0A4B68] leading-tight mb-3">{project.title_en}</h2>
+                {project.summary_en && <p lang="en" className="text-lg text-[#0A4B68]/80 leading-relaxed mb-6">{project.summary_en}</p>}
+                <div className="italic text-[#0A4B68]/60">
+                  <PortableText value={project.body_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
+                </div>
+              </div>
+            </>
           )}
         </article>
       </main>

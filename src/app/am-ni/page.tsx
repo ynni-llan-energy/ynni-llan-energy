@@ -51,11 +51,11 @@ export default async function AboutPage() {
           <div className="flex flex-col gap-6">
             {settings?.aboutSummary_cy && settings.aboutSummary_cy.length > 0 ? (
               <>
-                <div lang="cy" className="text-[#0A4B68]/80">
+                <div lang="cy" className="lang-only-cy text-[#0A4B68]/80">
                   <PortableText value={settings.aboutSummary_cy as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
                 </div>
                 {settings.aboutSummary_en && settings.aboutSummary_en.length > 0 && (
-                  <div lang="en" className="italic text-[#0A4B68]/50 pl-4 border-l-2 border-[#C07E00]/40">
+                  <div lang="en" className="lang-only-en text-[#0A4B68]/80">
                     <PortableText value={settings.aboutSummary_en as Parameters<typeof PortableText>[0]["value"]} components={portableTextComponents} />
                   </div>
                 )}

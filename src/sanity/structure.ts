@@ -1,5 +1,5 @@
 import { type StructureResolver } from "sanity/structure";
-import { CogIcon, DocumentTextIcon, DocumentIcon, SunIcon, UserIcon } from "@sanity/icons";
+import { CogIcon, DocumentTextIcon, DocumentIcon, SunIcon, UserIcon, UsersIcon } from "@sanity/icons";
 
 /**
  * Custom Studio sidebar structure.
@@ -83,4 +83,12 @@ export const structure: StructureResolver = (S) =>
         .title("Pobl / People")
         .icon(UserIcon)
         .child(S.documentTypeList("person").title("Pobl / People")),
+
+      S.divider(),
+
+      // Volunteer roles
+      S.listItem()
+        .title("Rolau Gwirfoddol / Volunteer Roles")
+        .icon(UsersIcon)
+        .child(S.documentTypeList("volunteerRole").title("Rolau Gwirfoddol / Volunteer Roles")),
     ]);

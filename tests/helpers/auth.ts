@@ -33,9 +33,50 @@ export interface TestUserRecord {
 }
 
 /**
+ * Poll the `members` table (via the admin/service-role client, bypassing RLS)
+ * until the row created by the `on_auth_user_created` trigger becomes visible
+ * to a fresh query, or the timeout elapses.
+ *
+ * The trigger fires synchronously inside the same transaction as the
+ * `auth.users` insert, so in principle the row exists the instant
+ * `admin.createUser()` resolves. In practice the local Supabase stack used in
+ * CI has occasionally shown a short window where a subsequent query — via a
+ * different connection/service — doesn't see the row yet. Rather than let
+ * every consumer of a freshly created test user hit that window, wait it out
+ * once here.
+ */
+async function waitForMemberRow(
+  userId: string,
+  { timeoutMs = 8_000, intervalMs = 250 } = {}
+): Promise<void> {
+  const admin = createAdminClient();
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const { data } = await admin
+      .from("members")
+      .select("id, full_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (data?.full_name) return;
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error(
+    `members row for user ${userId} did not become visible within ${timeoutMs}ms — ` +
+      "the on_auth_user_created trigger may not have fired."
+  );
+}
+
+/**
  * Create a confirmed auth user via the admin API.
  * `email_confirm: true` skips the email confirmation step so the test can
  * log in immediately via generateMagicLink.
+ *
+ * Waits for the corresponding `members` row (created by a DB trigger) to
+ * become queryable before returning, so callers never race the trigger.
  */
 export async function createTestUser(
   email: string,
@@ -51,6 +92,8 @@ export async function createTestUser(
   if (error || !data.user) {
     throw new Error(`Failed to create test user: ${error?.message}`);
   }
+
+  await waitForMemberRow(data.user.id);
 
   return { id: data.user.id, email, fullName };
 }

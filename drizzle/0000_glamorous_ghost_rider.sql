@@ -42,7 +42,7 @@ CREATE TABLE "email_sends" (
 	"template" text NOT NULL,
 	"subject" text NOT NULL,
 	"recipient_count" integer DEFAULT 0 NOT NULL,
-	"triggered_by" uuid NOT NULL,
+	"triggered_by" uuid,
 	"sent_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -109,6 +109,7 @@ ALTER TABLE "ballot_options" ADD CONSTRAINT "ballot_options_ballot_id_ballots_id
 ALTER TABLE "ballots" ADD CONSTRAINT "ballots_created_by_members_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."members"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "email_sends" ADD CONSTRAINT "email_sends_triggered_by_members_id_fk" FOREIGN KEY ("triggered_by") REFERENCES "public"."members"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "members" ADD CONSTRAINT "members_id_user_id_fk" FOREIGN KEY ("id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "members" ADD CONSTRAINT "members_approved_by_members_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."members"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "role_interest" ADD CONSTRAINT "role_interest_member_id_members_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."members"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "votes" ADD CONSTRAINT "votes_ballot_id_ballots_id_fk" FOREIGN KEY ("ballot_id") REFERENCES "public"."ballots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

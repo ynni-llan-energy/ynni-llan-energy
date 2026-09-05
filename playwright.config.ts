@@ -3,9 +3,14 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright configuration.
  *
- * LOCAL DEV  — run `supabase start` then `npm run test:e2e`
- *              playwright will reuse a running dev server or start one.
- * CI         — the workflow starts Supabase + the Next.js server before this
+ * LOCAL DEV  — run `docker compose -f docker-compose.dev.yml up -d`, apply
+ *              migrations (`npm run db:migrate`), then `npm run test:e2e`.
+ *              Playwright will reuse a running dev server or start one.
+ *              tests/helpers/auth.ts talks to Postgres directly, so
+ *              DATABASE_URL and AUTH_SECRET must be set in the shell running
+ *              Playwright (not just in .env.local, which only the Next.js
+ *              dev server itself loads).
+ * CI         — the workflow starts Postgres + the Next.js server before this
  *              runs, so we just point at localhost:3000 and skip webServer.
  */
 const baseURL = process.env.BASE_URL ?? "http://localhost:3000";

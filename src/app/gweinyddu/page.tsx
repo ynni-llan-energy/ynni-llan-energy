@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { desc, eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { members as membersTable } from "@/lib/db/schema";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { verifyMember, revokeMembership } from "@/app/actions/admin";
@@ -15,42 +17,33 @@ export const metadata: Metadata = {
 
 export default async function AdminDashboard() {
   // ── Auth + admin guard ────────────────────────────────────────────────────
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth();
 
-  if (!user) redirect("/mewngofnodi");
+  if (!session?.user?.id) redirect("/mewngofnodi");
 
-  const { data: currentMember } = await supabase
-    .from("members")
-    .select("is_admin, full_name")
-    .eq("id", user.id)
-    .single();
+  const currentMember = await db.query.members.findFirst({
+    where: eq(membersTable.id, session.user.id),
+    columns: { isAdmin: true, fullName: true },
+  });
 
-  if (!currentMember?.is_admin) redirect("/aelodau");
+  if (!currentMember?.isAdmin) redirect("/aelodau");
 
-  // ── Fetch all members (service role bypasses RLS) ─────────────────────────
-  const service = createServiceClient();
-  const { data: allMembers } = await service
-    .from("members")
-    .select(
-      "id, full_name, email, postcode, status, joined_at, approved_at, membership_expires_at, is_admin"
-    )
-    .order("joined_at", { ascending: false });
+  // ── Fetch all members (no RLS any more — authorization is the admin guard
+  // above, matching how the old service-role client already bypassed RLS) ──
+  const allMembers = await db.query.members.findMany({
+    orderBy: desc(membersTable.joinedAt),
+  });
 
-  const members = allMembers ?? [];
-
-  const queue = members.filter((m) =>
+  const queue = allMembers.filter((m) =>
     m.status === "pending" || m.status === "expired"
   );
-  const active = members.filter((m) => m.status === "active" && !m.is_admin);
-  const suspended = members.filter((m) => m.status === "suspended");
+  const active = allMembers.filter((m) => m.status === "active" && !m.isAdmin);
+  const suspended = allMembers.filter((m) => m.status === "suspended");
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function fmtDate(iso: string | null) {
-    if (!iso) return "—";
-    return new Date(iso).toLocaleDateString("cy-GB", {
+  function fmtDate(date: Date | null) {
+    if (!date) return "—";
+    return date.toLocaleDateString("cy-GB", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -77,7 +70,7 @@ export default async function AdminDashboard() {
             <p className="text-xs text-[#0A4B68]/40 mt-2">
               <span lang="cy">Wedi mewngofnodi fel:</span>{" "}
               <span lang="en" className="italic">Signed in as:</span>{" "}
-              {currentMember.full_name ?? user.email}
+              {currentMember.fullName ?? session.user.email}
             </p>
           </div>
 
@@ -129,7 +122,7 @@ export default async function AdminDashboard() {
                     className="border-b border-[#0A4B68]/5 hover:bg-[#0A4B68]/5 transition-colors"
                   >
                     <td className="py-3 px-3 font-medium text-[#0A4B68]">
-                      {m.full_name ?? <span className="text-[#0A4B68]/40 italic">—</span>}
+                      {m.fullName ?? <span className="text-[#0A4B68]/40 italic">—</span>}
                     </td>
                     <td className="py-3 px-3 text-[#0A4B68]/70">{m.email}</td>
                     <td className="py-3 px-3 text-[#0A4B68]/70">
@@ -140,8 +133,8 @@ export default async function AdminDashboard() {
                     </td>
                     <td className="py-3 px-3 text-[#0A4B68]/60 text-xs">
                       {m.status === "expired"
-                        ? fmtDate(m.membership_expires_at)
-                        : fmtDate(m.joined_at)}
+                        ? fmtDate(m.membershipExpiresAt)
+                        : fmtDate(m.joinedAt)}
                     </td>
                     <td className="py-3 px-3 text-right">
                       <form action={verifyMember.bind(null, m.id)}>
@@ -187,22 +180,22 @@ export default async function AdminDashboard() {
                     className="border-b border-[#0A4B68]/5 hover:bg-[#0A4B68]/5 transition-colors"
                   >
                     <td className="py-3 px-3 font-medium text-[#0A4B68]">
-                      {m.full_name ?? <span className="text-[#0A4B68]/40 italic">—</span>}
+                      {m.fullName ?? <span className="text-[#0A4B68]/40 italic">—</span>}
                     </td>
                     <td className="py-3 px-3 text-[#0A4B68]/70">{m.email}</td>
                     <td className="py-3 px-3 text-[#0A4B68]/70">
                       {m.postcode ?? <span className="text-[#0A4B68]/40 italic">—</span>}
                     </td>
                     <td className="py-3 px-3 text-[#0A4B68]/60 text-xs">
-                      {fmtDate(m.approved_at)}
+                      {fmtDate(m.approvedAt)}
                     </td>
                     <td className="py-3 px-3 text-xs">
-                      <ExpiryCell expiresAt={m.membership_expires_at} />
+                      <ExpiryCell expiresAt={m.membershipExpiresAt} />
                     </td>
                     <td className="py-3 px-3 text-right">
                       <ConfirmForm
                         action={revokeMembership.bind(null, m.id)}
-                        confirmMessage={`Dirymu aelodaeth ${m.full_name ?? m.email}?\nRevoke membership for ${m.full_name ?? m.email}?`}
+                        confirmMessage={`Dirymu aelodaeth ${m.fullName ?? m.email}?\nRevoke membership for ${m.fullName ?? m.email}?`}
                       >
                         <button
                           type="submit"
@@ -279,7 +272,7 @@ export default async function AdminDashboard() {
                       className="border-b border-[#0A4B68]/5 hover:bg-[#0A4B68]/5 transition-colors"
                     >
                       <td className="py-3 px-3 font-medium text-[#0A4B68]">
-                        {m.full_name ?? <span className="text-[#0A4B68]/40 italic">—</span>}
+                        {m.fullName ?? <span className="text-[#0A4B68]/40 italic">—</span>}
                       </td>
                       <td className="py-3 px-3 text-[#0A4B68]/70">{m.email}</td>
                       <td className="py-3 px-3 text-[#0A4B68]/70">
@@ -455,7 +448,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function ExpiryCell({ expiresAt }: { expiresAt: string | null }) {
+function ExpiryCell({ expiresAt }: { expiresAt: Date | null }) {
   if (!expiresAt) return <span className="text-[#0A4B68]/40 italic">—</span>;
 
   const expires = new Date(expiresAt);

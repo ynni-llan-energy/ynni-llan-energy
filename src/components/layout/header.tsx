@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { MobileMenu } from "./mobile-menu";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 
@@ -16,18 +17,15 @@ const navLinks = [
  * into a separate client component.
  */
 export async function Header() {
-  // Resolve auth state gracefully: if Supabase isn't configured (e.g. during
-  // a cold build without env vars) treat the user as logged-out.
+  // Header renders on every page, so a transient session-check failure
+  // (e.g. a DB blip) degrades to logged-out rather than taking the whole
+  // page down with it.
   let isLoggedIn = false;
   try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    isLoggedIn = !!user;
+    const session = await auth();
+    isLoggedIn = !!session?.user;
   } catch {
-    // Supabase not configured — render as logged-out
+    // Session check failed — render as logged-out
   }
 
   return (

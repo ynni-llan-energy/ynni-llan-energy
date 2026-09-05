@@ -3,8 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import * as React from "react";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { and, eq, inArray } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { emailSends, members } from "@/lib/db/schema";
 import { getResend, FROM_ADDRESS } from "@/lib/resend";
 import { MemberVerifiedEmail } from "@/emails/MemberVerifiedEmail";
 
@@ -20,22 +22,18 @@ function getSiteUrl(): string {
  * Returns the admin's user ID for use in audit fields.
  */
 async function requireAdmin(): Promise<string> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth();
 
-  if (!user) redirect("/mewngofnodi");
+  if (!session?.user?.id) redirect("/mewngofnodi");
 
-  const { data: member } = await supabase
-    .from("members")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
+  const member = await db.query.members.findFirst({
+    where: eq(members.id, session.user.id),
+    columns: { isAdmin: true },
+  });
 
-  if (!member?.is_admin) redirect("/aelodau");
+  if (!member?.isAdmin) redirect("/aelodau");
 
-  return user.id;
+  return session.user.id;
 }
 
 /**
@@ -45,61 +43,63 @@ async function requireAdmin(): Promise<string> {
  */
 export async function verifyMember(memberId: string) {
   const adminId = await requireAdmin();
-  const service = createServiceClient();
 
   const now = new Date();
   const expiresAt = new Date(now);
   expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-  const { data: member, error } = await service
-    .from("members")
-    .update({
+  const [member] = await db
+    .update(members)
+    .set({
       status: "active",
-      approved_at: now.toISOString(),
-      approved_by: adminId,
-      membership_expires_at: expiresAt.toISOString(),
-      renewal_notified_at: null,
+      approvedAt: now,
+      approvedBy: adminId,
+      membershipExpiresAt: expiresAt,
+      renewalNotifiedAt: null,
     })
-    .eq("id", memberId)
-    .in("status", ["pending", "expired"])
-    .select("email, full_name, membership_expires_at")
-    .single();
+    .where(
+      and(eq(members.id, memberId), inArray(members.status, ["pending", "expired"]))
+    )
+    .returning({
+      email: members.email,
+      fullName: members.fullName,
+      membershipExpiresAt: members.membershipExpiresAt,
+    });
 
-  if (error) {
-    console.error("[verifyMember] Update failed:", error.message);
+  if (!member) {
+    console.error("[verifyMember] Update matched no row for", memberId);
     revalidatePath("/gweinyddu");
     return;
   }
 
-  if (member) {
-    const name = member.full_name ?? "Aelod";
-    const expiryDate = new Date(member.membership_expires_at!).toLocaleDateString(
-      "cy-GB",
-      { day: "numeric", month: "long", year: "numeric" }
-    );
+  const name = member.fullName ?? "Aelod";
+  const expiryDate = member.membershipExpiresAt!.toLocaleDateString("cy-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
-    try {
-      await getResend().emails.send({
-        from: FROM_ADDRESS,
-        to: member.email,
-        subject: "Aelodaeth wedi ei chadarnhau / Membership confirmed",
-        react: React.createElement(MemberVerifiedEmail, {
-          name,
-          dashboardUrl: `${getSiteUrl()}/aelodau`,
-          expiryDate,
-        }),
-      });
+  try {
+    await getResend().emails.send({
+      from: FROM_ADDRESS,
+      to: member.email,
+      subject: "Aelodaeth wedi ei chadarnhau / Membership confirmed",
+      react: React.createElement(MemberVerifiedEmail, {
+        name,
+        dashboardUrl: `${getSiteUrl()}/aelodau`,
+        expiryDate,
+      }),
+    });
 
-      await service.from("email_sends").insert({
-        template: "member_verified",
-        subject: "Aelodaeth wedi ei chadarnhau / Membership confirmed",
-        recipient_count: 1,
-        triggered_by: adminId,
-      });
-    } catch (emailError) {
-      // Log but don't fail — the member is verified; the email is best-effort.
-      console.error("[verifyMember] Email send failed:", emailError);
-    }
+    await db.insert(emailSends).values({
+      template: "member_verified",
+      subject: "Aelodaeth wedi ei chadarnhau / Membership confirmed",
+      recipientCount: 1,
+      triggeredBy: adminId,
+    });
+  } catch (emailError) {
+    // Log but don't fail — the member is verified; the email is best-effort.
+    console.error("[verifyMember] Email send failed:", emailError);
   }
 
   revalidatePath("/gweinyddu");
@@ -109,21 +109,12 @@ export async function verifyMember(memberId: string) {
  * Revokes an active membership by setting status to 'suspended'.
  */
 export async function revokeMembership(memberId: string) {
-  const adminId = await requireAdmin();
-  const service = createServiceClient();
+  await requireAdmin();
 
-  const { error } = await service
-    .from("members")
-    .update({ status: "suspended" })
-    .eq("id", memberId)
-    .eq("status", "active");
-
-  if (error) {
-    console.error("[revokeMembership] Update failed:", error.message);
-  }
-
-  // Suppress unused variable warning — adminId used for the requireAdmin check
-  void adminId;
+  await db
+    .update(members)
+    .set({ status: "suspended" })
+    .where(and(eq(members.id, memberId), eq(members.status, "active")));
 
   revalidatePath("/gweinyddu");
 }

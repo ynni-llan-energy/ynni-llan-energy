@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { members } from "@/lib/db/schema";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ProfileForm } from "@/components/auth/profile-form";
@@ -13,34 +16,35 @@ export const metadata: Metadata = {
 };
 
 export default async function MemberDashboard() {
-  const supabase = await createClient();
+  const session = await auth();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session?.user?.id) {
     redirect("/mewngofnodi");
   }
 
-  const { data: member } = await supabase
-    .from("members")
-    .select(
-      "full_name, status, eligible_to_vote, postcode, joined_at, membership_expires_at, is_admin"
-    )
-    .eq("id", user.id)
-    .single();
+  const member = await db.query.members.findFirst({
+    where: eq(members.id, session.user.id),
+    columns: {
+      fullName: true,
+      status: true,
+      eligibleToVote: true,
+      postcode: true,
+      joinedAt: true,
+      membershipExpiresAt: true,
+      isAdmin: true,
+    },
+  });
 
-  const joinedAt = member?.joined_at
-    ? new Date(member.joined_at).toLocaleDateString("cy-GB", {
+  const joinedAt = member?.joinedAt
+    ? new Date(member.joinedAt).toLocaleDateString("cy-GB", {
         day: "numeric",
         month: "long",
         year: "numeric",
       })
     : null;
 
-  const expiresAt = member?.membership_expires_at
-    ? new Date(member.membership_expires_at)
+  const expiresAt = member?.membershipExpiresAt
+    ? new Date(member.membershipExpiresAt)
     : null;
 
   const expiryDateStr = expiresAt
@@ -190,7 +194,7 @@ export default async function MemberDashboard() {
           <div className="mb-8 flex items-center gap-3 flex-wrap">
             <span className="text-sm text-[#0A4B68]/60" lang="cy">Statws:</span>
             <MemberStatusBadge status={status} />
-            {member?.eligible_to_vote && (
+            {member?.eligibleToVote && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#2B8050]/10 text-[#2B8050] text-xs font-medium">
                 <span aria-hidden>✓</span>
                 <span lang="cy">Dilysedig i bleidleisio</span>
@@ -206,7 +210,7 @@ export default async function MemberDashboard() {
               >
                 <span lang="cy">Yn dod i ben:</span>{" "}
                 <span lang="en" className="italic">Expires:</span>{" "}
-                <time dateTime={member!.membership_expires_at!}>
+                <time dateTime={member!.membershipExpiresAt!.toISOString()}>
                   {expiryDateStr}
                 </time>
               </span>
@@ -217,18 +221,13 @@ export default async function MemberDashboard() {
                all managed inside ProfileForm itself */}
           <ProfileForm
             defaultValues={{
-              // Fall back to auth user_metadata when the members row has no
-              // full_name yet (e.g. race between admin API and INSERT trigger).
-              full_name:
-                member?.full_name ??
-                (user.user_metadata?.full_name as string | null) ??
-                null,
+              full_name: member?.fullName ?? null,
               postcode: member?.postcode ?? null,
             }}
           />
 
           {/* Admin panel — only rendered for admin users */}
-          {member?.is_admin && (
+          {member?.isAdmin && (
             <section
               className="mt-8 bg-[#0A4B68]/5 border border-[#0A4B68]/15 rounded-sm p-6"
               aria-labelledby="admin-heading"

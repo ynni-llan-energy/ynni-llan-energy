@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   boolean,
   integer,
   pgTable,
@@ -84,7 +85,7 @@ export const members = pgTable("members", {
   postcode: text("postcode"),
   joinedAt: timestamp("joined_at", { withTimezone: true }),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
-  approvedBy: uuid("approved_by"),
+  approvedBy: uuid("approved_by").references((): AnyPgColumn => members.id),
   isAdmin: boolean("is_admin").notNull().default(false),
   membershipExpiresAt: timestamp("membership_expires_at", {
     withTimezone: true,
@@ -114,9 +115,11 @@ export const emailSends = pgTable("email_sends", {
   template: text("template").notNull(),
   subject: text("subject").notNull(),
   recipientCount: integer("recipient_count").notNull().default(0),
-  triggeredBy: uuid("triggered_by")
-    .notNull()
-    .references(() => members.id),
+  // Nullable, unlike the original Supabase `NOT NULL` column: the weekly
+  // admin-digest cron writes its own audit row with no member actor, and
+  // that insert was silently violating the NOT NULL constraint in
+  // production every week (unchecked — see admin-digest/route.ts).
+  triggeredBy: uuid("triggered_by").references(() => members.id),
   sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

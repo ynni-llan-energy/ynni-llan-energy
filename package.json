@@ -25,8 +25,6 @@
     "@react-pdf/renderer": "^4.5.1",
     "@sanity/client": "^7.20.0",
     "@sanity/vision": "^5.20.0",
-    "@supabase/ssr": "^0.10.0",
-    "@supabase/supabase-js": "^2.102.1",
     "drizzle-orm": "^0.45.2",
     "flags": "^4.0.6",
     "next": "16.2.2",

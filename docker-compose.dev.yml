@@ -1,0 +1,17 @@
+# Local development Postgres only. Not used in production — see
+# docker-compose.yml (added in the Hetzner deploy milestone) for that.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ynni_llan
+      POSTGRES_PASSWORD: dev_password_only
+      POSTGRES_DB: ynni_llan_dev
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ynni_llan_dev_pgdata:/var/lib/postgresql/data
+
+volumes:
+  ynni_llan_dev_pgdata:

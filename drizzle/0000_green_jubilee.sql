@@ -33,7 +33,8 @@ CREATE TABLE "ballots" (
 	"opens_at" timestamp with time zone NOT NULL,
 	"closes_at" timestamp with time zone NOT NULL,
 	"quorum" integer,
-	"created_by" uuid NOT NULL
+	"created_by" uuid NOT NULL,
+	CONSTRAINT "ballots_status_check" CHECK ("ballots"."status" IN ('draft', 'open', 'closed'))
 );
 --> statement-breakpoint
 CREATE TABLE "email_sends" (
@@ -61,7 +62,8 @@ CREATE TABLE "members" (
 	"membership_expires_at" timestamp with time zone,
 	"renewal_notified_at" timestamp with time zone,
 	"policy_consent_at" timestamp with time zone,
-	CONSTRAINT "members_email_unique" UNIQUE("email")
+	CONSTRAINT "members_email_unique" UNIQUE("email"),
+	CONSTRAINT "members_status_check" CHECK ("members"."status" IN ('pending', 'active', 'suspended', 'expired'))
 );
 --> statement-breakpoint
 CREATE TABLE "role_interest" (
@@ -70,7 +72,8 @@ CREATE TABLE "role_interest" (
 	"role_slug" text NOT NULL,
 	"role_title" text NOT NULL,
 	"member_id" uuid NOT NULL,
-	"statement" text
+	"statement" text,
+	CONSTRAINT "role_interest_role_slug_member_id_key" UNIQUE("role_slug","member_id")
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
@@ -101,7 +104,8 @@ CREATE TABLE "votes" (
 	"ballot_id" uuid NOT NULL,
 	"member_id" uuid NOT NULL,
 	"option_id" uuid NOT NULL,
-	"voted_at" timestamp with time zone DEFAULT now() NOT NULL
+	"voted_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "votes_ballot_id_member_id_key" UNIQUE("ballot_id","member_id")
 );
 --> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -114,4 +118,13 @@ ALTER TABLE "role_interest" ADD CONSTRAINT "role_interest_member_id_members_id_f
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "votes" ADD CONSTRAINT "votes_ballot_id_ballots_id_fk" FOREIGN KEY ("ballot_id") REFERENCES "public"."ballots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "votes" ADD CONSTRAINT "votes_member_id_members_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."members"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "votes" ADD CONSTRAINT "votes_option_id_ballot_options_id_fk" FOREIGN KEY ("option_id") REFERENCES "public"."ballot_options"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "votes" ADD CONSTRAINT "votes_option_id_ballot_options_id_fk" FOREIGN KEY ("option_id") REFERENCES "public"."ballot_options"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "idx_ballots_status" ON "ballots" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "idx_ballots_dates" ON "ballots" USING btree ("opens_at","closes_at");--> statement-breakpoint
+CREATE INDEX "idx_members_status" ON "members" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "idx_members_expires_at" ON "members" USING btree ("membership_expires_at") WHERE "members"."membership_expires_at" IS NOT NULL;--> statement-breakpoint
+CREATE INDEX "idx_members_is_admin" ON "members" USING btree ("is_admin") WHERE "members"."is_admin" = true;--> statement-breakpoint
+CREATE INDEX "idx_role_interest_slug" ON "role_interest" USING btree ("role_slug");--> statement-breakpoint
+CREATE INDEX "idx_role_interest_member" ON "role_interest" USING btree ("member_id");--> statement-breakpoint
+CREATE INDEX "idx_votes_ballot" ON "votes" USING btree ("ballot_id");--> statement-breakpoint
+CREATE INDEX "idx_votes_member" ON "votes" USING btree ("member_id");

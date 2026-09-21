@@ -1,11 +1,15 @@
+import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
+  check,
+  index,
   integer,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -67,45 +71,81 @@ export const verificationTokens = pgTable(
 // member's users.id (1:1), preserving the identity link the Supabase
 // `auth.users` -> `public.members` trigger used to maintain.
 
-export const members = pgTable("members", {
-  id: uuid("id")
-    .primaryKey()
-    .references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  email: text("email").notNull().unique(),
-  fullName: text("full_name"),
-  status: text("status", {
-    enum: ["pending", "active", "suspended", "expired"],
-  })
-    .notNull()
-    .default("pending"),
-  eligibleToVote: boolean("eligible_to_vote").notNull().default(false),
-  postcode: text("postcode"),
-  joinedAt: timestamp("joined_at", { withTimezone: true }),
-  approvedAt: timestamp("approved_at", { withTimezone: true }),
-  approvedBy: uuid("approved_by").references((): AnyPgColumn => members.id),
-  isAdmin: boolean("is_admin").notNull().default(false),
-  membershipExpiresAt: timestamp("membership_expires_at", {
-    withTimezone: true,
-  }),
-  renewalNotifiedAt: timestamp("renewal_notified_at", { withTimezone: true }),
-  policyConsentAt: timestamp("policy_consent_at", { withTimezone: true }),
-});
+export const members = pgTable(
+  "members",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    email: text("email").notNull().unique(),
+    fullName: text("full_name"),
+    status: text("status", {
+      enum: ["pending", "active", "suspended", "expired"],
+    })
+      .notNull()
+      .default("pending"),
+    eligibleToVote: boolean("eligible_to_vote").notNull().default(false),
+    postcode: text("postcode"),
+    joinedAt: timestamp("joined_at", { withTimezone: true }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: uuid("approved_by").references((): AnyPgColumn => members.id),
+    isAdmin: boolean("is_admin").notNull().default(false),
+    membershipExpiresAt: timestamp("membership_expires_at", {
+      withTimezone: true,
+    }),
+    renewalNotifiedAt: timestamp("renewal_notified_at", {
+      withTimezone: true,
+    }),
+    policyConsentAt: timestamp("policy_consent_at", { withTimezone: true }),
+  },
+  (table) => [
+    // Drizzle's `enum` option above is TypeScript-only — it emits no SQL
+    // constraint on its own. This restores the actual CHECK the original
+    // Supabase migration enforced at the DB layer.
+    check(
+      "members_status_check",
+      sql`${table.status} IN ('pending', 'active', 'suspended', 'expired')`
+    ),
+    index("idx_members_status").on(table.status),
+    index("idx_members_expires_at")
+      .on(table.membershipExpiresAt)
+      .where(sql`${table.membershipExpiresAt} IS NOT NULL`),
+    index("idx_members_is_admin")
+      .on(table.isAdmin)
+      .where(sql`${table.isAdmin} = true`),
+  ]
+);
 
-export const roleInterest = pgTable("role_interest", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  roleSlug: text("role_slug").notNull(),
-  roleTitle: text("role_title").notNull(),
-  memberId: uuid("member_id")
-    .notNull()
-    .references(() => members.id, { onDelete: "cascade" }),
-  statement: text("statement"),
-});
+export const roleInterest = pgTable(
+  "role_interest",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    roleSlug: text("role_slug").notNull(),
+    roleTitle: text("role_title").notNull(),
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    statement: text("statement"),
+  },
+  (table) => [
+    // submitRoleInterest() (src/app/actions/volunteer.ts) relies on this
+    // constraint existing — it catches a 23505 unique-violation to detect
+    // "already submitted interest for this role" rather than checking
+    // first, so without it duplicate submissions would silently succeed.
+    unique("role_interest_role_slug_member_id_key").on(
+      table.roleSlug,
+      table.memberId
+    ),
+    index("idx_role_interest_slug").on(table.roleSlug),
+    index("idx_role_interest_member").on(table.memberId),
+  ]
+);
 
 export const emailSends = pgTable("email_sends", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -132,25 +172,33 @@ export const emailSends = pgTable("email_sends", {
 // the voting feature must add that authorization at the point of the vote
 // INSERT — do not assume the DB enforces it any more.
 
-export const ballots = pgTable("ballots", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  titleCy: text("title_cy").notNull(),
-  titleEn: text("title_en").notNull(),
-  descriptionCy: text("description_cy"),
-  descriptionEn: text("description_en"),
-  status: text("status", { enum: ["draft", "open", "closed"] })
-    .notNull()
-    .default("draft"),
-  opensAt: timestamp("opens_at", { withTimezone: true }).notNull(),
-  closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
-  quorum: integer("quorum"),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => members.id),
-});
+export const ballots = pgTable(
+  "ballots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    titleCy: text("title_cy").notNull(),
+    titleEn: text("title_en").notNull(),
+    descriptionCy: text("description_cy"),
+    descriptionEn: text("description_en"),
+    status: text("status", { enum: ["draft", "open", "closed"] })
+      .notNull()
+      .default("draft"),
+    opensAt: timestamp("opens_at", { withTimezone: true }).notNull(),
+    closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
+    quorum: integer("quorum"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => members.id),
+  },
+  (table) => [
+    check("ballots_status_check", sql`${table.status} IN ('draft', 'open', 'closed')`),
+    index("idx_ballots_status").on(table.status),
+    index("idx_ballots_dates").on(table.opensAt, table.closesAt),
+  ]
+);
 
 export const ballotOptions = pgTable("ballot_options", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -165,21 +213,31 @@ export const ballotOptions = pgTable("ballot_options", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-export const votes = pgTable("votes", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  ballotId: uuid("ballot_id")
-    .notNull()
-    .references(() => ballots.id),
-  memberId: uuid("member_id")
-    .notNull()
-    .references(() => members.id),
-  optionId: uuid("option_id")
-    .notNull()
-    .references(() => ballotOptions.id),
-  votedAt: timestamp("voted_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const votes = pgTable(
+  "votes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    ballotId: uuid("ballot_id")
+      .notNull()
+      .references(() => ballots.id),
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => members.id),
+    optionId: uuid("option_id")
+      .notNull()
+      .references(() => ballotOptions.id),
+    votedAt: timestamp("voted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // One vote per member per ballot — enforced at the DB layer regardless
+    // of whatever the (not yet built) voting UI does or doesn't check.
+    unique("votes_ballot_id_member_id_key").on(table.ballotId, table.memberId),
+    index("idx_votes_ballot").on(table.ballotId),
+    index("idx_votes_member").on(table.memberId),
+  ]
+);

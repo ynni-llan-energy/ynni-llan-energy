@@ -21,10 +21,13 @@ export default async function AdminVolunteerInterestPage() {
 
   const member = await db.query.members.findFirst({
     where: eq(members.id, session.user.id),
-    columns: { isAdmin: true },
+    columns: { isAdmin: true, status: true },
   });
 
-  if (!member?.isAdmin) redirect("/aelodau");
+  // A suspended/expired admin loses access here too — see the comment on
+  // requireAdmin() in app/actions/admin.ts for why this check matters now
+  // that there's no RLS is_admin() backstop.
+  if (!member?.isAdmin || member.status !== "active") redirect("/aelodau");
 
   const interests = await db.query.roleInterest.findMany({
     orderBy: desc(roleInterest.createdAt),

@@ -227,7 +227,7 @@ export default async function MemberDashboard() {
           />
 
           {/* Admin panel — only rendered for admin users */}
-          {member?.isAdmin && (
+          {member?.isAdmin && member.status === "active" && (
             <section
               className="mt-8 bg-[#0A4B68]/5 border border-[#0A4B68]/15 rounded-sm p-6"
               aria-labelledby="admin-heading"

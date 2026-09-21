@@ -18,7 +18,13 @@ function getSiteUrl(): string {
 
 /**
  * Verifies that the current session belongs to an admin member.
- * Redirects away if not authenticated or not an admin.
+ * Redirects away if not authenticated or not an admin, or if a suspended
+ * or expired member still carries the is_admin flag — matching the intent
+ * of supabase/migrations/20260420000002_admin_role.sql (a suspended admin
+ * loses access without needing a separate flag update), which was never
+ * actually wired into the app layer even before this migration: RLS's
+ * is_admin() only gated policies for reading *other* members' rows, and
+ * this check has always read the admin's own row instead.
  * Returns the admin's user ID for use in audit fields.
  */
 async function requireAdmin(): Promise<string> {
@@ -28,10 +34,10 @@ async function requireAdmin(): Promise<string> {
 
   const member = await db.query.members.findFirst({
     where: eq(members.id, session.user.id),
-    columns: { isAdmin: true },
+    columns: { isAdmin: true, status: true },
   });
 
-  if (!member?.isAdmin) redirect("/aelodau");
+  if (!member?.isAdmin || member.status !== "active") redirect("/aelodau");
 
   return session.user.id;
 }

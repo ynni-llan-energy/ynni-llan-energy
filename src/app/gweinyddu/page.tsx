@@ -23,10 +23,13 @@ export default async function AdminDashboard() {
 
   const currentMember = await db.query.members.findFirst({
     where: eq(membersTable.id, session.user.id),
-    columns: { isAdmin: true, fullName: true },
+    columns: { isAdmin: true, fullName: true, status: true },
   });
 
-  if (!currentMember?.isAdmin) redirect("/aelodau");
+  // A suspended/expired admin loses access here too — see the comment on
+  // requireAdmin() in app/actions/admin.ts for why this check matters now
+  // that there's no RLS is_admin() backstop.
+  if (!currentMember?.isAdmin || currentMember.status !== "active") redirect("/aelodau");
 
   // ── Fetch all members (no RLS any more — authorization is the admin guard
   // above, matching how the old service-role client already bypassed RLS) ──

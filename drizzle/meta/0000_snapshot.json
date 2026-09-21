@@ -1,5 +1,5 @@
 {
-  "id": "74ada55c-ac58-4eed-9977-89b4dd14fb0b",
+  "id": "700aea65-3b64-434e-acad-e2ce4b6a762d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -245,7 +245,44 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_ballots_status": {
+          "name": "idx_ballots_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_ballots_dates": {
+          "name": "idx_ballots_dates",
+          "columns": [
+            {
+              "expression": "opens_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "closes_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "ballots_created_by_members_id_fk": {
           "name": "ballots_created_by_members_id_fk",
@@ -264,7 +301,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "ballots_status_check": {
+          "name": "ballots_status_check",
+          "value": "\"ballots\".\"status\" IN ('draft', 'open', 'closed')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.email_sends": {
@@ -433,7 +475,55 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_members_status": {
+          "name": "idx_members_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_members_expires_at": {
+          "name": "idx_members_expires_at",
+          "columns": [
+            {
+              "expression": "membership_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"members\".\"membership_expires_at\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_members_is_admin": {
+          "name": "idx_members_is_admin",
+          "columns": [
+            {
+              "expression": "is_admin",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"members\".\"is_admin\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "members_id_user_id_fk": {
           "name": "members_id_user_id_fk",
@@ -473,7 +563,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "members_status_check": {
+          "name": "members_status_check",
+          "value": "\"members\".\"status\" IN ('pending', 'active', 'suspended', 'expired')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.role_interest": {
@@ -519,7 +614,38 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_role_interest_slug": {
+          "name": "idx_role_interest_slug",
+          "columns": [
+            {
+              "expression": "role_slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_role_interest_member": {
+          "name": "idx_role_interest_member",
+          "columns": [
+            {
+              "expression": "member_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "role_interest_member_id_members_id_fk": {
           "name": "role_interest_member_id_members_id_fk",
@@ -536,7 +662,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "role_interest_role_slug_member_id_key": {
+          "name": "role_interest_role_slug_member_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "role_slug",
+            "member_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -721,7 +856,38 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_votes_ballot": {
+          "name": "idx_votes_ballot",
+          "columns": [
+            {
+              "expression": "ballot_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_votes_member": {
+          "name": "idx_votes_member",
+          "columns": [
+            {
+              "expression": "member_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "votes_ballot_id_ballots_id_fk": {
           "name": "votes_ballot_id_ballots_id_fk",
@@ -764,7 +930,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "votes_ballot_id_member_id_key": {
+          "name": "votes_ballot_id_member_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ballot_id",
+            "member_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

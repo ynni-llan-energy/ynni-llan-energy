@@ -32,9 +32,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — keep the example template, ignore everything with real values
+# env files — keep the example templates, ignore everything with real values
 .env*
 !.env.local.example
+!.env.production.example
 
 # Claude Code local settings
 .claude/

@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.env*
+supabase
+tests
+test-results
+playwright-report
+docs
+*.md
+.github
+docker-compose*.yml
+Dockerfile
+Caddyfile
+scripts

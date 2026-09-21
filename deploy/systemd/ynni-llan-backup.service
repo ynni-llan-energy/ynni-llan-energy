@@ -1,0 +1,8 @@
+[Unit]
+Description=Ynni Llan Postgres backup (dump, gzip, upload off-box, rotate)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ynni-llan-energy/deploy/backup-db.sh

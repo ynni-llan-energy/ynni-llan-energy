@@ -31,8 +31,12 @@ const mono = "'Courier New', Courier, monospace";
 export interface MagicLinkEmailProps {
   /** The full magic-link / OTP URL to embed in the button. */
   magicLinkUrl: string;
-  /** The 6-character one-time code (shown as a fallback). */
-  otp: string;
+  /**
+   * The one-time code shown as a manual-entry fallback, when the sending
+   * provider issues one alongside the link. Auth.js's email provider only
+   * issues a link, so this is omitted for that flow.
+   */
+  otp?: string;
   /** Recipient's email address (used for accessibility). */
   email: string;
   /** Determines the copy shown — "signup" for new members, "login" for existing. */
@@ -97,13 +101,17 @@ export function MagicLinkEmail({
               </Button>
             </Section>
 
-            {/* OTP code */}
-            <Text style={s.codeLabel}>
-              Neu defnyddiwch y cod hwn / Or use this code:
-            </Text>
-            <Section style={s.codeBox}>
-              <Text style={s.code}>{otp}</Text>
-            </Section>
+            {/* OTP code — only shown when the provider issues one */}
+            {otp && (
+              <>
+                <Text style={s.codeLabel}>
+                  Neu defnyddiwch y cod hwn / Or use this code:
+                </Text>
+                <Section style={s.codeBox}>
+                  <Text style={s.code}>{otp}</Text>
+                </Section>
+              </>
+            )}
 
             <Text style={s.expiry}>
               Mae&apos;r ddolen hon yn ddilys am awr.{" "}

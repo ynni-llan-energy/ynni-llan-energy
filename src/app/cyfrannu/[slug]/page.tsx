@@ -7,7 +7,7 @@ import { getVolunteerRole, getVolunteerRoles } from "@/sanity/queries";
 import { sanityDraftClient } from "@/sanity/client";
 import { PortableText } from "@portabletext/react";
 import { InterestForm } from "@/components/volunteer/interest-form";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
 import { ScrollToEnglish } from "@/components/ui/scroll-to-english";
 import type { Metadata } from "next";
 
@@ -44,11 +44,10 @@ export default async function VolunteerRolePage({ params }: Props) {
   // Check auth status to decide what the interest form shows
   let isAuthenticated = false;
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    isAuthenticated = !!user;
+    const session = await auth();
+    isAuthenticated = !!session?.user;
   } catch {
-    // Supabase not configured — treat as unauthenticated
+    // Session check failed — treat as unauthenticated
   }
 
   return (

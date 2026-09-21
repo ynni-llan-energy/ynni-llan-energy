@@ -1,0 +1,11 @@
+# Reverse proxy + automatic HTTPS (Let's Encrypt) for the Hetzner deploy.
+# SITE_DOMAIN comes from the .env file docker-compose.yml reads — set it to
+# the real domain (e.g. ynni-llan.cymru) before the first `docker compose up`.
+# No separate API subdomain is needed — there's no PostgREST any more, just
+# this one Next.js app.
+
+{$SITE_DOMAIN} {
+	encode gzip
+
+	reverse_proxy web:3000
+}

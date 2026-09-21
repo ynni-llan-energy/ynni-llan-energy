@@ -1,5 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import type { NextAuthRequest } from "next-auth";
 import { wholeSiteFlag } from "./flags";
 
 // Routes that require a valid session
@@ -10,10 +11,16 @@ const AUTH_ROUTES = ["/ymuno", "/mewngofnodi"];
 const WIP_PAGE = "/coming-soon";
 const WIP_BYPASS_PREFIXES = [WIP_PAGE, "/api"];
 
-export async function proxy(request: NextRequest) {
-  // WIP mode: show coming-soon page until the 'whole-site' flag is on.
-  // Toggle the flag in the Vercel Flags dashboard — no deployment needed.
+// Wrapped in Auth.js's `auth()` (rather than calling it with no arguments,
+// which relies on next/headers' cookies() and only works inside the App
+// Router request context, not Proxy) so `request.auth` is populated from a
+// database session lookup keyed off the request's own cookie header before
+// this callback runs — the direct equivalent of the old Supabase
+// getUser() round-trip.
+export default auth(async (request: NextAuthRequest) => {
   const { pathname } = request.nextUrl;
+
+  // WIP mode: show coming-soon page until the 'whole-site' flag is on.
   if (!WIP_BYPASS_PREFIXES.some((p) => pathname.startsWith(p))) {
     const siteOpen = await wholeSiteFlag();
     if (!siteOpen) {
@@ -21,48 +28,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // If Supabase isn't configured yet, pass every request straight through.
-  // This prevents a 500 on all routes (including the draft-mode preview
-  // endpoint) when NEXT_PUBLIC_SUPABASE_URL / ANON_KEY are not set.
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
-    return NextResponse.next({ request });
-  }
-
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Refresh session — must not call any other supabase.auth methods between
-  // createServerClient and getUser() to avoid token-refresh races.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const isAuthed = !!request.auth?.user;
 
   // Protect member-area routes
   if (PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-    if (!user) {
+    if (!isAuthed) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/mewngofnodi";
       loginUrl.searchParams.set("next", pathname);
@@ -72,7 +42,7 @@ export async function proxy(request: NextRequest) {
 
   // Redirect already-authenticated users away from auth pages
   if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
-    if (user) {
+    if (isAuthed) {
       const dashboardUrl = request.nextUrl.clone();
       dashboardUrl.pathname = "/aelodau";
       dashboardUrl.search = "";
@@ -80,8 +50,8 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return supabaseResponse;
-}
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: [

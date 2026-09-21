@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod/v4";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { roleInterest } from "@/lib/db/schema";
 
 export type VolunteerFormState =
   | {
@@ -35,25 +37,22 @@ export async function submitRoleInterest(
     return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth();
 
-  if (!user) {
+  if (!session?.user?.id) {
     redirect("/mewngofnodi");
   }
 
-  const { error } = await supabase.from("role_interest").insert({
-    role_slug: parsed.data.role_slug,
-    role_title: parsed.data.role_title,
-    member_id: user.id,
-    statement: parsed.data.statement ?? null,
-  });
-
-  if (error) {
+  try {
+    await db.insert(roleInterest).values({
+      roleSlug: parsed.data.role_slug,
+      roleTitle: parsed.data.role_title,
+      memberId: session.user.id,
+      statement: parsed.data.statement ?? null,
+    });
+  } catch (error) {
     // Unique constraint violation — already submitted interest for this role
-    if (error.code === "23505") {
+    if (error instanceof Error && "code" in error && error.code === "23505") {
       return { message: "already_submitted" };
     }
     console.error("[submitRoleInterest] DB error:", error);

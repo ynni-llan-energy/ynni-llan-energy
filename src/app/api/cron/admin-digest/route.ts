@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as React from "react";
-import { createServiceClient } from "@/lib/supabase/service";
+import { and, asc, desc, eq, gt, gte, lte } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { emailSends, members } from "@/lib/db/schema";
 import { getResend, FROM_ADDRESS } from "@/lib/resend";
 import { AdminWeeklyDigestEmail } from "@/emails/AdminWeeklyDigestEmail";
 import type { DigestMember, ExpiringMember } from "@/emails/AdminWeeklyDigestEmail";
 
 /**
  * Weekly admin digest cron endpoint.
- * Called every Monday at 08:00 UTC by Vercel Cron (see vercel.json).
+ * Scheduling moves to the host (systemd timer / OS cron curling this
+ * endpoint) in the Hetzner deploy — Vercel Cron is no longer configured.
  *
  * Sends a summary email to all active admins containing:
  *   - New member registrations in the past 7 days
@@ -16,9 +19,6 @@ import type { DigestMember, ExpiringMember } from "@/emails/AdminWeeklyDigestEma
  *   - Memberships expiring within the next 30 days
  *
  * Protected by Bearer token (CRON_SECRET env var).
- * Vercel automatically injects this header when running cron jobs.
- *
- * Also serves to keep the Supabase database active between low-traffic periods.
  */
 export async function GET(request: NextRequest) {
   // ── Auth ────────────────────────────────────────────────────────────────
@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const service = createServiceClient();
   const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
   const adminUrl = `${siteUrl}/gweinyddu`;
 
@@ -38,116 +37,100 @@ export async function GET(request: NextRequest) {
   const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   const errors: string[] = [];
+  const formatDate = (d: Date) =>
+    d.toLocaleDateString("cy-GB", { day: "numeric", month: "long", year: "numeric" });
 
   // ── 1. New registrations this week ──────────────────────────────────────
-  const { data: newMembersRaw, error: newMembersError } = await service
-    .from("members")
-    .select("full_name, email, created_at")
-    .gte("created_at", sevenDaysAgo.toISOString())
-    .order("created_at", { ascending: false });
-
-  if (newMembersError) {
-    errors.push(`New members query: ${newMembersError.message}`);
-  }
-
-  const newMembersCount = newMembersRaw?.length ?? 0;
-  const newMembers: DigestMember[] = (newMembersRaw ?? [])
-    .slice(0, 10)
-    .map((m) => ({
-      fullName: m.full_name ?? "Aelod",
+  let newMembersCount = 0;
+  let newMembers: DigestMember[] = [];
+  try {
+    const newMembersRaw = await db.query.members.findMany({
+      where: gte(members.createdAt, sevenDaysAgo),
+      orderBy: desc(members.createdAt),
+      columns: { fullName: true, email: true, createdAt: true },
+    });
+    newMembersCount = newMembersRaw.length;
+    newMembers = newMembersRaw.slice(0, 10).map((m) => ({
+      fullName: m.fullName ?? "Aelod",
       email: m.email,
-      date: new Date(m.created_at).toLocaleDateString("cy-GB", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
+      date: formatDate(m.createdAt),
     }));
+  } catch (err) {
+    errors.push(`New members query: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   // ── 2. Members awaiting approval ────────────────────────────────────────
-  const { data: pendingRaw, error: pendingError } = await service
-    .from("members")
-    .select("full_name, email, created_at")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
-
-  if (pendingError) {
-    errors.push(`Pending members query: ${pendingError.message}`);
-  }
-
-  const pendingCount = pendingRaw?.length ?? 0;
-  const pendingMembers: DigestMember[] = (pendingRaw ?? [])
-    .slice(0, 10)
-    .map((m) => ({
-      fullName: m.full_name ?? "Aelod",
+  let pendingCount = 0;
+  let pendingMembers: DigestMember[] = [];
+  try {
+    const pendingRaw = await db.query.members.findMany({
+      where: eq(members.status, "pending"),
+      orderBy: asc(members.createdAt),
+      columns: { fullName: true, email: true, createdAt: true },
+    });
+    pendingCount = pendingRaw.length;
+    pendingMembers = pendingRaw.slice(0, 10).map((m) => ({
+      fullName: m.fullName ?? "Aelod",
       email: m.email,
-      date: new Date(m.created_at).toLocaleDateString("cy-GB", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
+      date: formatDate(m.createdAt),
     }));
+  } catch (err) {
+    errors.push(`Pending members query: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   // ── 3. Membership totals by status ──────────────────────────────────────
-  const { data: allMembers, error: totalsError } = await service
-    .from("members")
-    .select("status");
-
-  if (totalsError) {
-    errors.push(`Totals query: ${totalsError.message}`);
-  }
-
-  const counts = (allMembers ?? []).reduce(
-    (acc, m) => {
-      const s = m.status as string;
-      acc[s] = (acc[s] ?? 0) + 1;
+  let totalActive = 0;
+  let totalExpired = 0;
+  let totalSuspended = 0;
+  try {
+    const allMembers = await db.query.members.findMany({ columns: { status: true } });
+    const counts = allMembers.reduce((acc, m) => {
+      acc[m.status] = (acc[m.status] ?? 0) + 1;
       return acc;
-    },
-    {} as Record<string, number>
-  );
-
-  const totalActive = counts["active"] ?? 0;
-  const totalExpired = counts["expired"] ?? 0;
-  const totalSuspended = counts["suspended"] ?? 0;
+    }, {} as Record<string, number>);
+    totalActive = counts["active"] ?? 0;
+    totalExpired = counts["expired"] ?? 0;
+    totalSuspended = counts["suspended"] ?? 0;
+  } catch (err) {
+    errors.push(`Totals query: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   // ── 4. Memberships expiring within 30 days ──────────────────────────────
-  const { data: expiringRaw, error: expiringError } = await service
-    .from("members")
-    .select("full_name, membership_expires_at")
-    .eq("status", "active")
-    .gt("membership_expires_at", now.toISOString())
-    .lte("membership_expires_at", in30Days.toISOString())
-    .order("membership_expires_at", { ascending: true });
-
-  if (expiringError) {
-    errors.push(`Expiring query: ${expiringError.message}`);
-  }
-
-  const expiringCount = expiringRaw?.length ?? 0;
-  const expiringMembers: ExpiringMember[] = (expiringRaw ?? [])
-    .slice(0, 10)
-    .map((m) => {
-      const expiresAt = new Date(m.membership_expires_at!);
+  let expiringCount = 0;
+  let expiringMembers: ExpiringMember[] = [];
+  try {
+    const expiringRaw = await db.query.members.findMany({
+      where: and(
+        eq(members.status, "active"),
+        gt(members.membershipExpiresAt, now),
+        lte(members.membershipExpiresAt, in30Days)
+      ),
+      orderBy: asc(members.membershipExpiresAt),
+      columns: { fullName: true, membershipExpiresAt: true },
+    });
+    expiringCount = expiringRaw.length;
+    expiringMembers = expiringRaw.slice(0, 10).map((m) => {
+      const expiresAt = m.membershipExpiresAt!;
       const daysRemaining = Math.ceil(
         (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );
-      return {
-        fullName: m.full_name ?? "Aelod",
-        daysRemaining,
-      };
+      return { fullName: m.fullName ?? "Aelod", daysRemaining };
     });
-
-  // ── 5. Fetch admin recipients ────────────────────────────────────────────
-  const { data: admins, error: adminsError } = await service
-    .from("members")
-    .select("email")
-    .eq("is_admin", true)
-    .eq("status", "active");
-
-  if (adminsError) {
-    errors.push(`Admins query: ${adminsError.message}`);
+  } catch (err) {
+    errors.push(`Expiring query: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  const adminEmails = (admins ?? []).map((a) => a.email);
+  // ── 5. Fetch admin recipients ────────────────────────────────────────────
+  let adminEmails: string[] = [];
+  try {
+    const admins = await db.query.members.findMany({
+      where: and(eq(members.isAdmin, true), eq(members.status, "active")),
+      columns: { email: true },
+    });
+    adminEmails = admins.map((a) => a.email);
+  } catch (err) {
+    errors.push(`Admins query: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   if (adminEmails.length === 0) {
     return NextResponse.json(
@@ -157,13 +140,6 @@ export async function GET(request: NextRequest) {
   }
 
   // ── 6. Build date strings for email ─────────────────────────────────────
-  const formatDate = (d: Date) =>
-    d.toLocaleDateString("cy-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-
   const weekStart = formatDate(sevenDaysAgo);
   const weekEnd = formatDate(now);
 
@@ -201,12 +177,16 @@ export async function GET(request: NextRequest) {
 
   // ── 8. Audit log ─────────────────────────────────────────────────────────
   if (sent > 0) {
-    await service.from("email_sends").insert({
-      template: "admin_weekly_digest",
-      subject: `Crynodeb Wythnosol: Aelodaeth / Weekly Digest: Membership — ${weekEnd}`,
-      recipient_count: sent,
-      triggered_by: null,
-    });
+    try {
+      await db.insert(emailSends).values({
+        template: "admin_weekly_digest",
+        subject: `Crynodeb Wythnosol: Aelodaeth / Weekly Digest: Membership — ${weekEnd}`,
+        recipientCount: sent,
+        triggeredBy: null,
+      });
+    } catch (err) {
+      errors.push(`Audit log: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   const status = errors.length > 0 ? 207 : 200;

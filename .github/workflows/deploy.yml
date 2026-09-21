@@ -1,0 +1,114 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and push images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    services:
+      # Throwaway build-time Postgres — see the header comment in
+      # Dockerfile for why next build needs *a* database but must never
+      # see the real one.
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: build
+          POSTGRES_PASSWORD: build_password
+          POSTGRES_DB: build
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    outputs:
+      web_image: ${{ steps.meta.outputs.web_image }}
+      migrate_image: ${{ steps.meta.outputs.migrate_image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Apply migrations to the build-time database
+        run: npx drizzle-kit migrate
+        env:
+          DATABASE_URL: postgres://build:build_password@localhost:5432/build
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        run: |
+          echo "web_image=ghcr.io/${{ github.repository }}-web:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "migrate_image=ghcr.io/${{ github.repository }}-migrate:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-web:${{ github.sha }}
+            ghcr.io/${{ github.repository }}-web:latest
+          # Only NEXT_PUBLIC_* (inlined into the client bundle, not secret)
+          # plus the throwaway build-time DB/secret — see Dockerfile's
+          # header comment. Never pass real production secrets here.
+          build-args: |
+            DATABASE_URL=postgres://build:build_password@localhost:5432/build
+            AUTH_SECRET=ci-build-placeholder-not-a-real-secret
+            NEXT_PUBLIC_SANITY_PROJECT_ID=${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+            NEXT_PUBLIC_SANITY_DATASET=production
+            NEXT_PUBLIC_SANITY_PREVIEW_SECRET=${{ secrets.NEXT_PUBLIC_SANITY_PREVIEW_SECRET }}
+
+      - name: Build and push migrate image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: migrator
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-migrate:${{ github.sha }}
+            ghcr.io/${{ github.repository }}-migrate:latest
+
+  deploy:
+    name: Deploy to Hetzner
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # This step never sees DATABASE_URL, AUTH_SECRET, RESEND_API_KEY, or
+      # any other production secret — those live only in the box's own
+      # .env file (docker-compose.yml), read directly by the containers.
+      # CI only needs SSH access and the two image tags built above.
+      - name: Pull, migrate, and restart on the box
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_SSH_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/ynni-llan-energy
+            export WEB_IMAGE="${{ needs.build.outputs.web_image }}"
+            export MIGRATE_IMAGE="${{ needs.build.outputs.migrate_image }}"
+            docker compose pull web migrate
+            docker compose run --rm migrate
+            docker compose up -d
+            docker image prune -f

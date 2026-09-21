@@ -1,0 +1,12 @@
+[Unit]
+Description=Ynni Llan membership maintenance cron (expiry + renewal reminders)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/ynni-llan-energy/.env
+# web's port is bound to 127.0.0.1 only (see docker-compose.yml) — hit it
+# directly rather than going out through the public domain and back in
+# through Caddy for a call that never leaves the box.
+ExecStart=/usr/bin/curl -fsS -X GET -H "Authorization: Bearer ${CRON_SECRET}" http://localhost:3000/api/cron/membership

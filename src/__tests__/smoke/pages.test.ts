@@ -77,10 +77,11 @@ describe("Protected pages (unauthenticated)", () => {
 // ---------------------------------------------------------------------------
 
 describe("Infrastructure routes", () => {
-  it("GET /auth/callback without a code returns a redirect (not 500)", async () => {
-    // Without a code param it should redirect to login with an error flag,
-    // not crash with a 500.
-    const { status } = await getNoRedirect("/auth/callback");
+  it("GET /api/auth/callback/resend without a token returns a redirect (not 500)", async () => {
+    // Auth.js's own email-provider callback, which replaced the old
+    // Supabase-specific /auth/callback route. Without a token param it
+    // should redirect to the configured error page, not crash with a 500.
+    const { status } = await getNoRedirect("/api/auth/callback/resend");
     expect([301, 302, 307, 308]).toContain(status);
   });
 

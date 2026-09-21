@@ -1,31 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/types/database";
-
-/**
- * Returns a Supabase client using the service-role key so tests can create
- * and delete auth users without going through the public API.
- *
- * LOCAL  — defaults to local Supabase (supabase start) on port 54321.
- *          The service-role key is deterministic for local dev; override via env.
- * CI     — the workflow exports SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
- *          after `supabase start`.
- */
-export function createAdminClient() {
-  const url = process.env.SUPABASE_URL ?? "http://localhost:54321";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!key) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not set.\n" +
-        "Run `supabase start` then export the Secret key:\n" +
-        "  export SUPABASE_SERVICE_ROLE_KEY=$(supabase status 2>&1 | grep -oP 'Secret\\s+│\\s+\\K[^\\s│]+')"
-    );
-  }
-
-  return createClient<Database>(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { createHash, randomBytes } from "crypto";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { members, users, verificationTokens } from "@/lib/db/schema";
 
 export interface TestUserRecord {
   id: string;
@@ -34,96 +10,79 @@ export interface TestUserRecord {
 }
 
 /**
- * Create a confirmed auth user via the admin API.
- * `email_confirm: true` skips the email confirmation step so the test can
- * log in immediately via generateMagicLink.
- *
- * The `on_auth_user_created` trigger creates the corresponding `members` row
- * as a side effect of the `auth.users` insert, but in CI that row has proven
- * unreliable to observe from a subsequent query soon after — sometimes taking
- * many seconds to become visible, sometimes longer than is practical to wait
- * for in a test setup step. Rather than depend on that timing, explicitly
- * upsert the row ourselves right after creating the user: this is
- * deterministic and race-free, and harmless if the trigger's own insert lands
- * around the same time (its `ON CONFLICT (id) DO NOTHING` just no-ops against
- * the row we already wrote).
+ * Create a verified user + members row directly via Drizzle, bypassing the
+ * signup flow entirely (no email, no Auth.js round-trip needed for setup).
  */
 export async function createTestUser(
   email: string,
   fullName: string
 ): Promise<TestUserRecord> {
-  const admin = createAdminClient();
-  const { data, error } = await admin.auth.admin.createUser({
+  const [user] = await db
+    .insert(users)
+    .values({ email, name: fullName, emailVerified: new Date() })
+    .returning();
+
+  await db.insert(members).values({
+    id: user.id,
     email,
-    email_confirm: true,
-    user_metadata: { full_name: fullName },
+    fullName,
+    status: "pending",
+    eligibleToVote: false,
+    joinedAt: new Date(),
   });
 
-  if (error || !data.user) {
-    throw new Error(`Failed to create test user: ${error?.message}`);
-  }
-
-  const { error: upsertError } = await admin.from("members").upsert(
-    {
-      id: data.user.id,
-      email,
-      full_name: fullName,
-      status: "pending",
-      eligible_to_vote: false,
-      joined_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
-
-  if (upsertError) {
-    throw new Error(`Failed to create members row for test user: ${upsertError.message}`);
-  }
-
-  return { id: data.user.id, email, fullName };
+  return { id: user.id, email, fullName };
 }
 
 /**
- * Generate a magic link URL for a user via the admin API.
- * Use this in tests to establish an authenticated session without email.
- */
-/**
- * Generate a callback URL that authenticates a user via token_hash, bypassing
- * email delivery entirely. Navigating to this URL in Playwright establishes a
- * real server-side session via /auth/callback → verifyOtp.
+ * Generate a callback URL that authenticates a user via Auth.js's email
+ * (Resend) provider verification flow, bypassing email delivery entirely.
+ * Navigating to this URL in Playwright establishes a real server-side
+ * session via /api/auth/callback/resend, exercising the same token-hash
+ * lookup a real magic-link click goes through.
  *
- * We construct the URL directly rather than navigating through Supabase's
- * /auth/v1/verify endpoint, which has inconsistent redirect behaviour across
- * flow types (PKCE vs implicit) depending on Supabase version.
+ * Mirrors @auth/core's own token handling exactly (see
+ * lib/actions/signin/send-token.js and lib/actions/callback/index.js):
+ * the plaintext token goes in the URL, and `sha256(token + AUTH_SECRET)` is
+ * what's stored in verificationToken.token for lookup on verification.
  */
 export async function generateMagicLink(email: string): Promise<string> {
-  const admin = createAdminClient();
-  const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
-  const { data, error } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email,
-  });
-
-  if (error || !data.properties?.hashed_token) {
-    throw new Error(`Failed to generate magic link: ${error?.message}`);
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error(
+      "AUTH_SECRET is not set — export it in the shell running Playwright, " +
+        "matching the value the Next.js server was started with."
+    );
   }
 
-  const params = new URLSearchParams({
-    token_hash: data.properties.hashed_token,
-    type: "magiclink",
+  const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
+  const token = randomBytes(32).toString("hex");
+  const hashedToken = createHash("sha256").update(`${token}${secret}`).digest("hex");
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+  await db.insert(verificationTokens).values({
+    identifier: email,
+    token: hashedToken,
+    expires,
   });
-  return `${baseUrl}/auth/callback?${params}`;
+
+  const params = new URLSearchParams({
+    callbackUrl: `${baseUrl}/aelodau`,
+    token,
+    email,
+  });
+  return `${baseUrl}/api/auth/callback/resend?${params}`;
 }
 
 /**
- * Hard-delete the auth user and their associated members row (cascade handles
- * the FK, but deleting from auth.users is sufficient with our trigger).
+ * Hard-delete the user; the members row cascades via its FK to users.id.
  */
 export async function deleteTestUser(userId: string): Promise<void> {
-  const admin = createAdminClient();
-  const { error } = await admin.auth.admin.deleteUser(userId);
-  if (error) {
+  try {
+    await db.delete(users).where(eq(users.id, userId));
+  } catch (err) {
     // Log but don't throw — we still want other teardown steps to run.
-    console.warn(`Could not delete test user ${userId}: ${error.message}`);
+    console.warn(`Could not delete test user ${userId}:`, err);
   }
 }
 
@@ -132,8 +91,6 @@ export async function deleteTestUser(userId: string): Promise<void> {
  * Used for cleanup in tests that create users through the signup UI.
  */
 export async function deleteTestUserByEmail(email: string): Promise<void> {
-  const admin = createAdminClient();
-  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  const user = data?.users.find((u) => u.email === email);
-  if (user?.id) await deleteTestUser(user.id);
+  const user = await db.query.users.findFirst({ where: eq(users.email, email) });
+  if (user) await deleteTestUser(user.id);
 }
